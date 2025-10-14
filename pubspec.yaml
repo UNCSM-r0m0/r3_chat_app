@@ -51,7 +51,7 @@ dependencies:
 
   # UI y UX
   flutter_markdown: ^0.6.18 # Renderizar Markdown
-  lucide_icons_flutter: ^0.263.1 # Iconos consistentes con frontend
+  feather_icons: ^1.1.0 # Iconos consistentes con frontend
   flutter_screenutil: ^5.9.0 # Responsive design
 
   # Utilidades
@@ -66,7 +66,6 @@ dependencies:
 
   # Formularios y validación
   flutter_form_builder: ^9.1.1
-  form_builder_validators: ^9.1.0
 
 dev_dependencies:
   flutter_test:
