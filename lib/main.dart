@@ -32,7 +32,7 @@ class R3ChatApp extends StatelessWidget {
           title: 'R3 Chat',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.darkTheme,
-          home: const ChatScreen(), // Temporalmente para probar el chat
+          home: const LoginScreen(),
         );
       },
     );

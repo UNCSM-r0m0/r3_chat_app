@@ -1,19 +1,26 @@
 import 'package:dio/dio.dart';
 import '../../../core/utils/logger.dart';
+import '../../auth/services/auth_service.dart';
 import '../models/chat_message.dart';
 
 /// Servicio para manejar operaciones de chat
 class ChatService {
+  // Usa la IP local de tu PC accesible desde el emulador/dispositivo
+  // Ejemplo para emulador Android: 10.0.2.2
   static const String _baseUrl =
-      'http://localhost:3000'; // TODO: Cambiar por URL real
+      'https://jeanett-uncolorable-pickily.ngrok-free.dev/api';
 
   final Dio _dio = Dio();
+  final AuthService _auth = AuthService();
 
   ChatService() {
     _dio.options.baseUrl = _baseUrl;
     _dio.options.connectTimeout = const Duration(seconds: 30);
     _dio.options.receiveTimeout = const Duration(seconds: 30);
-    _dio.options.headers = {'Content-Type': 'application/json'};
+    _dio.options.headers = {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
+    };
   }
 
   /// Enviar mensaje al chat
@@ -25,19 +32,39 @@ class ChatService {
     try {
       AppLogger.chat('📤 Enviando mensaje: $message', tag: 'CHAT_SERVICE');
 
-      // Simular respuesta para pruebas
-      await Future.delayed(const Duration(seconds: 2));
+      final payload = {
+        'content': message,
+        'model': model,
+        if (conversationHistory != null)
+          'messages': conversationHistory
+              .map((m) => {'role': m.role.name, 'content': m.content})
+              .toList(),
+      };
 
-      final response = ChatMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        role: ChatRole.assistant,
-        content: _generateMockResponse(message),
-        timestamp: DateTime.now(),
-        model: model,
+      final token = await _auth.getToken();
+      final res = await _dio.post(
+        '/chat/message',
+        data: payload,
+        options: Options(
+          headers: {if (token != null) 'Authorization': 'Bearer $token'},
+        ),
       );
 
-      AppLogger.chat('📥 Respuesta recibida', tag: 'CHAT_SERVICE');
-      return response;
+      final data = res.data is Map<String, dynamic>
+          ? res.data as Map<String, dynamic>
+          : Map<String, dynamic>.from(res.data);
+
+      // Backend devuelve { response: string, model: string, tokensUsed: number, ... }
+      final assistant = ChatMessage(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        role: ChatRole.assistant,
+        content: data['response']?.toString() ?? 'Sin respuesta',
+        timestamp: DateTime.now(),
+        model: data['model']?.toString() ?? model,
+      );
+
+      AppLogger.chat('📥 Respuesta recibida del backend', tag: 'CHAT_SERVICE');
+      return assistant;
     } catch (error) {
       AppLogger.error(
         '❌ Error enviando mensaje',
@@ -53,25 +80,30 @@ class ChatService {
     try {
       AppLogger.chat('📋 Obteniendo historial de chats', tag: 'CHAT_SERVICE');
 
-      // Simular datos para pruebas
-      await Future.delayed(const Duration(seconds: 1));
-
-      final chats = [
-        Chat(
-          id: '1',
-          title: '¿Cómo funciona Flutter?',
-          createdAt: DateTime.now().subtract(const Duration(days: 1)),
-          updatedAt: DateTime.now().subtract(const Duration(hours: 2)),
-          model: 'gpt-4',
+      final token = await _auth.getToken();
+      final res = await _dio.get(
+        '/chat',
+        options: Options(
+          headers: {if (token != null) 'Authorization': 'Bearer $token'},
         ),
-        Chat(
-          id: '2',
-          title: 'Explicación de MVVM',
-          createdAt: DateTime.now().subtract(const Duration(days: 2)),
-          updatedAt: DateTime.now().subtract(const Duration(days: 1)),
-          model: 'claude-3',
-        ),
-      ];
+      );
+      final list = (res.data as List<dynamic>).cast<dynamic>();
+      final chats = list.map<Chat>((item) {
+        final map = item is Map<String, dynamic>
+            ? item
+            : Map<String, dynamic>.from(item as Map);
+        return Chat(
+          id: map['id']?.toString() ?? '',
+          title: map['title']?.toString() ?? 'Nuevo Chat',
+          createdAt:
+              DateTime.tryParse(map['createdAt']?.toString() ?? '') ??
+              DateTime.now(),
+          updatedAt:
+              DateTime.tryParse(map['updatedAt']?.toString() ?? '') ??
+              DateTime.now(),
+          model: map['model']?.toString(),
+        );
+      }).toList();
 
       AppLogger.chat(
         '✅ Historial obtenido: ${chats.length} chats',
@@ -92,16 +124,30 @@ class ChatService {
   Future<Chat> createNewChat() async {
     try {
       AppLogger.chat('🆕 Creando nuevo chat', tag: 'CHAT_SERVICE');
-
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      final chat = Chat(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        title: 'Nueva conversación',
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
+      final token = await _auth.getToken();
+      final res = await _dio.post(
+        '/chat',
+        data: {},
+        options: Options(
+          headers: {if (token != null) 'Authorization': 'Bearer $token'},
+        ),
       );
-
+      final map = res.data is Map<String, dynamic>
+          ? res.data as Map<String, dynamic>
+          : Map<String, dynamic>.from(res.data);
+      final chat = Chat(
+        id:
+            map['id']?.toString() ??
+            DateTime.now().millisecondsSinceEpoch.toString(),
+        title: map['title']?.toString() ?? 'Nueva conversación',
+        createdAt:
+            DateTime.tryParse(map['createdAt']?.toString() ?? '') ??
+            DateTime.now(),
+        updatedAt:
+            DateTime.tryParse(map['updatedAt']?.toString() ?? '') ??
+            DateTime.now(),
+        model: map['model']?.toString(),
+      );
       AppLogger.chat('✅ Chat creado: ${chat.id}', tag: 'CHAT_SERVICE');
       return chat;
     } catch (error) {
@@ -118,9 +164,13 @@ class ChatService {
   Future<void> deleteChat(String chatId) async {
     try {
       AppLogger.chat('🗑️ Eliminando chat: $chatId', tag: 'CHAT_SERVICE');
-
-      await Future.delayed(const Duration(milliseconds: 300));
-
+      final token = await _auth.getToken();
+      await _dio.delete(
+        '/chat/$chatId',
+        options: Options(
+          headers: {if (token != null) 'Authorization': 'Bearer $token'},
+        ),
+      );
       AppLogger.chat('✅ Chat eliminado', tag: 'CHAT_SERVICE');
     } catch (error) {
       AppLogger.error(

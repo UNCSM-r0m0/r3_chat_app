@@ -1,5 +1,7 @@
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/utils/logger.dart';
 
 /// Servicio de autenticación para OAuth (Google y GitHub)
@@ -7,6 +9,11 @@ class AuthService {
   // URL del backend - cambiar según tu configuración
   // static const String _backendUrl = 'http://localhost:3000';
   // static const String _backendUrl = 'https://jeanett-uncolorable-pickily.ngrok-free.dev';
+  static const String _backendUrl =
+      'https://jeanett-uncolorable-pickily.ngrok-free.dev';
+
+  static const _tokenKey = 'auth_token';
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   // Google Sign-In instance
   final GoogleSignIn _googleSignIn = GoogleSignIn(
@@ -63,6 +70,9 @@ class AuthService {
           '🎉 Autenticación exitosa con backend',
           tag: 'AUTH_SERVICE',
         );
+
+        // Guardar token de forma segura
+        await _storage.write(key: _tokenKey, value: backendResult.token);
         return AuthResult.success(
           user: User(
             id: backendResult.userId ?? '',
@@ -147,7 +157,8 @@ class AuthService {
       // Cerrar sesión de Google
       await _googleSignIn.signOut();
 
-      // TODO: Cerrar sesión en backend
+      // Borrar token local
+      await _storage.delete(key: _tokenKey);
 
       AppLogger.success('✅ Sesión cerrada exitosamente', tag: 'AUTH_SERVICE');
     } catch (error) {
@@ -168,50 +179,36 @@ class AuthService {
   }) async {
     try {
       AppLogger.network('📡 Enviando tokens al backend', tag: 'AUTH_SERVICE');
-
-      // TODO: Descomentar cuando el backend esté disponible
-      /*
       final dio = Dio();
 
       final response = await dio.post(
-        '$_backendUrl/api/auth/oauth/verify',
-        data: {
-          'accessToken': accessToken,
-          'idToken': idToken,
-          'provider': provider,
-          'userInfo': userInfo,
-        },
+        '$_backendUrl/api/auth/mobile/google-verify',
+        data: {'idToken': idToken, 'accessToken': accessToken},
         options: Options(
           headers: {
             'Content-Type': 'application/json',
             'ngrok-skip-browser-warning': 'true',
           },
+          followRedirects: false,
+          validateStatus: (_) => true,
         ),
       );
 
-      if (response.statusCode == 200) {
-        final data = response.data;
-        return BackendAuthResult.success(
-          token: data['access_token'],
-          userId: data['user']['id'],
-        );
-      } else {
-        return BackendAuthResult.error(
-          'Error del servidor: ${response.statusCode}',
-        );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = response.data is Map<String, dynamic>
+            ? response.data as Map<String, dynamic>
+            : Map<String, dynamic>.from(response.data);
+        final token = (data['access_token'] ?? data['token'])?.toString();
+        final userId =
+            data['user']?['id']?.toString() ?? data['userId']?.toString();
+        if (token != null && userId != null) {
+          return BackendAuthResult.success(token: token, userId: userId);
+        }
+        return BackendAuthResult.error('Respuesta inválida del backend');
       }
-      */
 
-      // Simular respuesta exitosa para pruebas
-      AppLogger.success(
-        '✅ Simulando respuesta exitosa del backend',
-        tag: 'AUTH_SERVICE',
-      );
-      await Future.delayed(const Duration(seconds: 1)); // Simular delay de red
-
-      return BackendAuthResult.success(
-        token: 'mock_jwt_token_${DateTime.now().millisecondsSinceEpoch}',
-        userId: 'user_${userInfo['email']?.toString().hashCode ?? 'unknown'}',
+      return BackendAuthResult.error(
+        'Error del servidor: ${response.statusCode}',
       );
     } catch (error) {
       AppLogger.error(
@@ -221,6 +218,11 @@ class AuthService {
       );
       return BackendAuthResult.error('Error de conexión: $error');
     }
+  }
+
+  /// Obtener token actual (si existe)
+  Future<String?> getToken() async {
+    return _storage.read(key: _tokenKey);
   }
 }
 

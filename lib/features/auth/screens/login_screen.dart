@@ -4,6 +4,7 @@ import 'package:feather_icons/feather_icons.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/logger.dart';
 import '../services/auth_service.dart';
+import '../../chat/screens/chat_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -292,9 +293,11 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleGoogleSignIn(BuildContext context) async {
     if (_isLoading) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
     AppLogger.auth(
       '🔐 Usuario intenta iniciar sesión con Google',
@@ -302,37 +305,36 @@ class _LoginScreenState extends State<LoginScreen> {
     );
 
     try {
+      final messenger = ScaffoldMessenger.of(context);
+      final navigator = Navigator.of(context);
       final result = await _authService.signInWithGoogle();
 
       if (result.success && result.user != null) {
         AppLogger.success('🎉 Autenticación exitosa con Google', tag: 'LOGIN');
 
-        // Mostrar mensaje de éxito
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('¡Bienvenido, ${result.user!.name}!'),
-              backgroundColor: AppColors.success,
-            ),
-          );
-        }
+        // Mostrar mensaje y navegar al chat
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text('¡Bienvenido, ${result.user!.name}!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
 
-        // TODO: Navegar a la pantalla principal
-        // Navigator.of(context).pushReplacementNamed('/home');
+        navigator.pushReplacement(
+          MaterialPageRoute(builder: (_) => const ChatScreen()),
+        );
       } else {
         AppLogger.error(
           '❌ Error en autenticación: ${result.error}',
           tag: 'LOGIN',
         );
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(result.error ?? 'Error desconocido'),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(result.error ?? 'Error desconocido'),
+            backgroundColor: AppColors.error,
+          ),
+        );
       }
     } catch (error) {
       AppLogger.error(
@@ -341,25 +343,30 @@ class _LoginScreenState extends State<LoginScreen> {
         error: error,
       );
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.showSnackBar(
         const SnackBar(
           content: Text('Error inesperado. Inténtalo de nuevo.'),
           backgroundColor: AppColors.error,
         ),
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
   Future<void> _handleGitHubSignIn(BuildContext context) async {
     if (_isLoading) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
     AppLogger.auth(
       '🔐 Usuario intenta iniciar sesión con GitHub',
@@ -367,35 +374,35 @@ class _LoginScreenState extends State<LoginScreen> {
     );
 
     try {
+      final messenger = ScaffoldMessenger.of(context);
+      final navigator = Navigator.of(context);
       final result = await _authService.signInWithGitHub();
 
       if (result.success && result.user != null) {
         AppLogger.success('🎉 Autenticación exitosa con GitHub', tag: 'LOGIN');
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('¡Bienvenido, ${result.user!.name}!'),
-              backgroundColor: AppColors.success,
-            ),
-          );
-        }
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text('¡Bienvenido, ${result.user!.name}!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
 
-        // TODO: Navegar a la pantalla principal
+        navigator.pushReplacement(
+          MaterialPageRoute(builder: (_) => const ChatScreen()),
+        );
       } else {
         AppLogger.error(
           '❌ Error en autenticación: ${result.error}',
           tag: 'LOGIN',
         );
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(result.error ?? 'Error desconocido'),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(result.error ?? 'Error desconocido'),
+            backgroundColor: AppColors.error,
+          ),
+        );
       }
     } catch (error) {
       AppLogger.error(
@@ -404,16 +411,19 @@ class _LoginScreenState extends State<LoginScreen> {
         error: error,
       );
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.showSnackBar(
         const SnackBar(
           content: Text('Error inesperado. Inténtalo de nuevo.'),
           backgroundColor: AppColors.error,
         ),
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 }

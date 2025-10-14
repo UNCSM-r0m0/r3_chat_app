@@ -32,50 +32,60 @@ class ChatArea extends ConsumerWidget {
 
   /// Widget para estado vacío (sin mensajes)
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF8B5CF6), // purple-500
-                  Color(0xFFEC4899), // pink-500
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color(0xFF8B5CF6), // purple-500
+                          Color(0xFFEC4899), // pink-500
+                        ],
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.chat_bubble_outline,
+                      size: 40,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    '¡Bienvenido a R3.chat!',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Comienza una nueva conversación escribiendo tu mensaje abajo.',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Color(0xFF9CA3AF), // gray-400
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.chat_bubble_outline,
-              size: 40,
-              color: Colors.white,
             ),
           ),
-          const SizedBox(height: 24),
-          const Text(
-            '¡Bienvenido a R3.chat!',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Comienza una nueva conversación escribiendo tu mensaje abajo.',
-            style: TextStyle(
-              fontSize: 16,
-              color: Color(0xFF9CA3AF), // gray-400
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 

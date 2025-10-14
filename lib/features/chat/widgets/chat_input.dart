@@ -17,6 +17,15 @@ class _ChatInputState extends ConsumerState<ChatInput> {
   bool _showModelSelector = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Escuchar cambios para habilitar/deshabilitar el botón enviar y refrescar UI
+    _controller.addListener(() {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     _focusNode.dispose();
@@ -28,86 +37,96 @@ class _ChatInputState extends ConsumerState<ChatInput> {
     final chatState = ref.watch(chatStateProvider);
     final isLoading = chatState.isLoading;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
-        color: Color(0xFF1F2937), // gray-800
-        border: Border(
-          top: BorderSide(
-            color: Color(0xFF374151), // gray-700
-            width: 1,
-          ),
-        ),
-      ),
-      child: Column(
-        children: [
-          // Selector de modelo
-          if (_showModelSelector) ...[
-            const ModelSelector(),
-            const SizedBox(height: 12),
-          ],
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
-          // Input principal
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF374151), // gray-700
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: const Color(0xFF4B5563), // gray-600
+    return SafeArea(
+      top: false,
+      child: AnimatedPadding(
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOut,
+        padding: EdgeInsets.only(bottom: bottomInset),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: const BoxDecoration(
+            color: Color(0xFF1F2937), // gray-800
+            border: Border(
+              top: BorderSide(
+                color: Color(0xFF374151), // gray-700
                 width: 1,
               ),
             ),
-            child: Column(
-              children: [
-                // Área de texto
-                TextField(
-                  controller: _controller,
-                  focusNode: _focusNode,
-                  enabled: !isLoading,
-                  maxLines: null,
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: (_) => _sendMessage(),
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
-                  decoration: const InputDecoration(
-                    hintText: 'Escribe tu mensaje...',
-                    hintStyle: TextStyle(
-                      color: Color(0xFF9CA3AF), // gray-400
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 16,
-                    ),
-                  ),
-                ),
-
-                // Botones de acción
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                  child: Row(
-                    children: [
-                      // Botón de modelo
-                      _buildModelButton(),
-                      const SizedBox(width: 8),
-
-                      // Botón de adjuntar
-                      _buildAttachButton(),
-                      const SizedBox(width: 8),
-
-                      // Botón de búsqueda web
-                      _buildWebSearchButton(),
-
-                      const Spacer(),
-
-                      // Botón de enviar
-                      _buildSendButton(isLoading),
-                    ],
-                  ),
-                ),
-              ],
-            ),
           ),
-        ],
+          child: Column(
+            children: [
+              // Selector de modelo
+              if (_showModelSelector) ...[
+                const ModelSelector(),
+                const SizedBox(height: 12),
+              ],
+
+              // Input principal
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF374151), // gray-700
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: const Color(0xFF4B5563), // gray-600
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    // Área de texto
+                    TextField(
+                      controller: _controller,
+                      focusNode: _focusNode,
+                      enabled: !isLoading,
+                      maxLines: null,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => _sendMessage(),
+                      style: const TextStyle(color: Colors.white, fontSize: 16),
+                      decoration: const InputDecoration(
+                        hintText: 'Escribe tu mensaje...',
+                        hintStyle: TextStyle(
+                          color: Color(0xFF9CA3AF), // gray-400
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 16,
+                        ),
+                      ),
+                    ),
+
+                    // Botones de acción
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                      child: Row(
+                        children: [
+                          // Botón de modelo
+                          _buildModelButton(),
+                          const SizedBox(width: 8),
+
+                          // Botón de adjuntar
+                          _buildAttachButton(),
+                          const SizedBox(width: 8),
+
+                          // Botón de búsqueda web
+                          _buildWebSearchButton(),
+
+                          const Spacer(),
+
+                          // Botón de enviar
+                          _buildSendButton(isLoading),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

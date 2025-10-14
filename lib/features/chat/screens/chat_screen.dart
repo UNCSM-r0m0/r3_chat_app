@@ -29,12 +29,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF111827), // gray-900
       appBar: _buildAppBar(),
+      resizeToAvoidBottomInset: true,
       body: Column(
         children: [
           // Área de chat
-          Expanded(child: ChatArea()),
+          const Expanded(child: ChatArea()),
 
           // Input de chat
+          const SizedBox(height: 4),
           const ChatInput(),
         ],
       ),
