@@ -3,12 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'core/theme/app_theme.dart';
 import 'core/utils/logger.dart';
+import 'core/utils/logger_test.dart';
 import 'features/auth/screens/login_screen.dart';
 
 void main() {
   // Configurar logger para desarrollo
   AppLogger.info('🚀 Iniciando R3 Chat App', tag: 'MAIN');
   AppLogger.separator(tag: 'MAIN');
+
+  // Ejecutar pruebas del logger (solo en debug)
+  LoggerTest.runAllTests();
 
   runApp(const ProviderScope(child: R3ChatApp()));
 }
