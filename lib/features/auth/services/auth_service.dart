@@ -1,12 +1,11 @@
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:dio/dio.dart';
 import '../../../core/utils/logger.dart';
 
 /// Servicio de autenticación para OAuth (Google y GitHub)
 class AuthService {
   // URL del backend - cambiar según tu configuración
-  static const String _backendUrl = 'http://localhost:3000';
+  // static const String _backendUrl = 'http://localhost:3000';
   // static const String _backendUrl = 'https://jeanett-uncolorable-pickily.ngrok-free.dev';
 
   // Google Sign-In instance
@@ -67,7 +66,7 @@ class AuthService {
         return AuthResult.success(
           user: User(
             id: backendResult.userId ?? '',
-            email: googleUser.email ?? '',
+            email: googleUser.email,
             name: googleUser.displayName ?? '',
             photoUrl: googleUser.photoUrl,
             provider: 'google',

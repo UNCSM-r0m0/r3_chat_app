@@ -1,0 +1,147 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/chat_providers.dart';
+
+/// Widget para seleccionar modelo de IA
+class ModelSelector extends ConsumerWidget {
+  const ModelSelector({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final chatState = ref.watch(chatStateProvider);
+    final selectedModel = chatState.selectedModel ?? 'gpt-4';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF374151), // gray-700
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFF4B5563), // gray-600
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Seleccionar Modelo',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _buildModelOptions(selectedModel, ref),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Construir opciones de modelos
+  List<Widget> _buildModelOptions(String selectedModel, WidgetRef ref) {
+    final models = [
+      _ModelOption(
+        id: 'gpt-4',
+        name: 'GPT-4',
+        description: 'Más inteligente',
+        isPremium: true,
+        color: Colors.blue,
+      ),
+      _ModelOption(
+        id: 'gpt-3.5-turbo',
+        name: 'GPT-3.5',
+        description: 'Rápido y eficiente',
+        isPremium: false,
+        color: Colors.green,
+      ),
+      _ModelOption(
+        id: 'claude-3',
+        name: 'Claude 3',
+        description: 'Análisis detallado',
+        isPremium: true,
+        color: Colors.orange,
+      ),
+      _ModelOption(
+        id: 'gemini-pro',
+        name: 'Gemini Pro',
+        description: 'Multimodal',
+        isPremium: false,
+        color: Colors.purple,
+      ),
+    ];
+
+    return models.map((model) {
+      final isSelected = selectedModel == model.id;
+
+      return GestureDetector(
+        onTap: () {
+          ref.read(chatStateProvider.notifier).selectModel(model.id);
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? model.color.withValues(alpha: 0.2)
+                : const Color(0xFF4B5563), // gray-600
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isSelected
+                  ? model.color
+                  : const Color(0xFF6B7280), // gray-500
+              width: isSelected ? 2 : 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: model.color,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                model.name,
+                style: TextStyle(
+                  color: isSelected ? model.color : Colors.white,
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                ),
+              ),
+              if (model.isPremium) ...[
+                const SizedBox(width: 4),
+                const Icon(Icons.star, color: Colors.amber, size: 12),
+              ],
+            ],
+          ),
+        ),
+      );
+    }).toList();
+  }
+}
+
+/// Clase para representar una opción de modelo
+class _ModelOption {
+  final String id;
+  final String name;
+  final String description;
+  final bool isPremium;
+  final Color color;
+
+  const _ModelOption({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.isPremium,
+    required this.color,
+  });
+}

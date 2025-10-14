@@ -5,6 +5,7 @@ import 'core/theme/app_theme.dart';
 import 'core/utils/logger.dart';
 import 'core/utils/logger_test.dart';
 import 'features/auth/screens/login_screen.dart';
+import 'features/chat/screens/chat_screen.dart';
 
 void main() {
   // Configurar logger para desarrollo
@@ -31,7 +32,7 @@ class R3ChatApp extends StatelessWidget {
           title: 'R3 Chat',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.darkTheme,
-          home: const SplashScreen(),
+          home: const ChatScreen(), // Temporalmente para probar el chat
         );
       },
     );
