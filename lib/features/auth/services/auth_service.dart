@@ -5,8 +5,9 @@ import '../../../core/utils/logger.dart';
 
 /// Servicio de autenticación para OAuth (Google y GitHub)
 class AuthService {
-  static const String _backendUrl =
-      'https://jeanett-uncolorable-pickily.ngrok-free.dev';
+  // URL del backend - cambiar según tu configuración
+  static const String _backendUrl = 'http://localhost:3000';
+  // static const String _backendUrl = 'https://jeanett-uncolorable-pickily.ngrok-free.dev';
 
   // Google Sign-In instance
   final GoogleSignIn _googleSignIn = GoogleSignIn(
@@ -169,6 +170,8 @@ class AuthService {
     try {
       AppLogger.network('📡 Enviando tokens al backend', tag: 'AUTH_SERVICE');
 
+      // TODO: Descomentar cuando el backend esté disponible
+      /*
       final dio = Dio();
 
       final response = await dio.post(
@@ -198,6 +201,19 @@ class AuthService {
           'Error del servidor: ${response.statusCode}',
         );
       }
+      */
+
+      // Simular respuesta exitosa para pruebas
+      AppLogger.success(
+        '✅ Simulando respuesta exitosa del backend',
+        tag: 'AUTH_SERVICE',
+      );
+      await Future.delayed(const Duration(seconds: 1)); // Simular delay de red
+
+      return BackendAuthResult.success(
+        token: 'mock_jwt_token_${DateTime.now().millisecondsSinceEpoch}',
+        userId: 'user_${userInfo['email']?.toString().hashCode ?? 'unknown'}',
+      );
     } catch (error) {
       AppLogger.error(
         '💥 Error al comunicarse con backend',
