@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:feather_icons/feather_icons.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/logger.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    AppLogger.info('🎨 Construyendo pantalla de login', tag: 'LOGIN');
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Container(
@@ -56,9 +59,9 @@ class LoginScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  
+
                   SizedBox(height: 40.h),
-                  
+
                   // Login Card
                   Container(
                     width: double.infinity,
@@ -87,9 +90,9 @@ class LoginScreen extends StatelessWidget {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        
+
                         SizedBox(height: 8.h),
-                        
+
                         // R3.chat title with gradient
                         ShaderMask(
                           shaderCallback: (bounds) => const LinearGradient(
@@ -106,9 +109,9 @@ class LoginScreen extends StatelessWidget {
                             ),
                           ),
                         ),
-                        
+
                         SizedBox(height: 16.h),
-                        
+
                         // Description
                         Text(
                           'Sign in below (we\'ll increase your message limits if you do) 😊',
@@ -119,19 +122,19 @@ class LoginScreen extends StatelessWidget {
                             height: 1.4,
                           ),
                         ),
-                        
+
                         SizedBox(height: 32.h),
-                        
+
                         // Google Sign In Button
                         _buildGoogleButton(context),
-                        
+
                         SizedBox(height: 16.h),
-                        
+
                         // GitHub Sign In Button
                         _buildGitHubButton(context),
-                        
+
                         SizedBox(height: 24.h),
-                        
+
                         // Terms and Privacy
                         RichText(
                           textAlign: TextAlign.center,
@@ -142,7 +145,9 @@ class LoginScreen extends StatelessWidget {
                               fontWeight: FontWeight.w400,
                             ),
                             children: [
-                              const TextSpan(text: 'By continuing, you agree to our '),
+                              const TextSpan(
+                                text: 'By continuing, you agree to our ',
+                              ),
                               TextSpan(
                                 text: 'Terms of Service',
                                 style: TextStyle(
@@ -217,7 +222,11 @@ class LoginScreen extends StatelessWidget {
       height: 56.h,
       child: ElevatedButton.icon(
         onPressed: () => _handleGitHubSignIn(context),
-        icon: const Icon(FeatherIcons.github, size: 20, color: AppColors.textPrimary),
+        icon: const Icon(
+          FeatherIcons.github,
+          size: 20,
+          color: AppColors.textPrimary,
+        ),
         label: Text(
           'Continue with GitHub',
           style: TextStyle(
@@ -241,6 +250,11 @@ class LoginScreen extends StatelessWidget {
   }
 
   void _handleGoogleSignIn(BuildContext context) {
+    AppLogger.auth(
+      '🔐 Usuario intenta iniciar sesión con Google',
+      tag: 'LOGIN',
+    );
+
     // TODO: Implement Google OAuth
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -248,9 +262,16 @@ class LoginScreen extends StatelessWidget {
         backgroundColor: AppColors.primary,
       ),
     );
+
+    AppLogger.warning('⚠️ Google OAuth no implementado aún', tag: 'LOGIN');
   }
 
   void _handleGitHubSignIn(BuildContext context) {
+    AppLogger.auth(
+      '🔐 Usuario intenta iniciar sesión con GitHub',
+      tag: 'LOGIN',
+    );
+
     // TODO: Implement GitHub OAuth
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -258,5 +279,7 @@ class LoginScreen extends StatelessWidget {
         backgroundColor: AppColors.primary,
       ),
     );
+
+    AppLogger.warning('⚠️ GitHub OAuth no implementado aún', tag: 'LOGIN');
   }
 }

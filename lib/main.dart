@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'core/theme/app_theme.dart';
+import 'core/utils/logger.dart';
 import 'features/auth/screens/login_screen.dart';
 
 void main() {
+  // Configurar logger para desarrollo
+  AppLogger.info('🚀 Iniciando R3 Chat App', tag: 'MAIN');
+  AppLogger.separator(tag: 'MAIN');
+  
   runApp(const ProviderScope(child: R3ChatApp()));
 }
 
@@ -90,19 +95,25 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _startAnimations() async {
+    AppLogger.info('🎬 Iniciando animaciones del splash screen', tag: 'SPLASH');
+    
     // Start logo animation
     _logoController.forward();
+    AppLogger.debug('Logo animation iniciada', tag: 'SPLASH');
 
     // Start glow animation (continuous)
     _glowController.repeat(reverse: true);
+    AppLogger.debug('Glow animation iniciada', tag: 'SPLASH');
 
     // Start text animation after delay
     await Future.delayed(const Duration(milliseconds: 800));
     _textController.forward();
+    AppLogger.debug('Text animation iniciada', tag: 'SPLASH');
 
     // Navigate to login after splash duration
     await Future.delayed(const Duration(milliseconds: 2000));
     if (mounted) {
+      AppLogger.info('🔄 Navegando a pantalla de login', tag: 'SPLASH');
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const LoginScreen()),
       );

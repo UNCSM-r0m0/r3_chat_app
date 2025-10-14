@@ -37,17 +37,17 @@ dependencies:
 
   # HTTP y Networking
   dio: ^5.4.0 # Cliente HTTP (mejor que http)
-  socket_io_client: ^2.0.3+1 # WebSockets para chat en tiempo real
+  socket_io_client: ^3.1.2 # WebSockets para chat en tiempo real (actualizado)
 
   # Autenticación OAuth
   google_sign_in: ^6.2.1 # Google OAuth nativo
   url_launcher: ^6.2.4 # Para OAuth web (GitHub)
-  flutter_web_auth: ^0.4.2 # OAuth web alternativo
+  # flutter_web_auth: ^0.4.2 # Temporalmente deshabilitado por error de namespace
 
   # Estado y Navegación
   riverpod: ^2.4.9 # Estado global
   flutter_riverpod: ^2.4.9
-  go_router: ^12.1.3 # Navegación
+  go_router: ^16.2.4 # Navegación (actualizado)
 
   # UI y UX
   flutter_markdown: ^0.6.18 # Renderizar Markdown
@@ -60,7 +60,7 @@ dependencies:
   flutter_secure_storage: ^9.0.0 # Storage seguro (tokens JWT)
 
   # UI Components
-  flutter_chat_ui: ^1.6.8 # Chat UI pre-built
+  flutter_chat_ui: ^2.9.1 # Chat UI pre-built (actualizado)
   shimmer: ^3.0.0 # Loading animations
   animated_text_kit: ^4.2.2 # Text animations
 
