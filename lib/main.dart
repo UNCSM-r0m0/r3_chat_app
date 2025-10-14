@@ -9,7 +9,7 @@ void main() {
   // Configurar logger para desarrollo
   AppLogger.info('🚀 Iniciando R3 Chat App', tag: 'MAIN');
   AppLogger.separator(tag: 'MAIN');
-  
+
   runApp(const ProviderScope(child: R3ChatApp()));
 }
 
@@ -96,7 +96,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   void _startAnimations() async {
     AppLogger.info('🎬 Iniciando animaciones del splash screen', tag: 'SPLASH');
-    
+
     // Start logo animation
     _logoController.forward();
     AppLogger.debug('Logo animation iniciada', tag: 'SPLASH');

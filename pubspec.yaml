@@ -57,6 +57,7 @@ dependencies:
   # Utilidades
   uuid: ^4.2.1 # Generar UUIDs
   shared_preferences: ^2.2.2 # Storage local
+  # shared_preferences_android: ^2.4.15 # Actualizado para evitar conflictos
   flutter_secure_storage: ^9.0.0 # Storage seguro (tokens JWT)
 
   # UI Components
