@@ -2,13 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'core/theme/app_theme.dart';
+import 'features/auth/screens/login_screen.dart';
 
 void main() {
-  runApp(
-    const ProviderScope(
-      child: R3ChatApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: R3ChatApp()));
 }
 
 class R3ChatApp extends StatelessWidget {
@@ -32,65 +29,227 @@ class R3ChatApp extends StatelessWidget {
   }
 }
 
-class SplashScreen extends StatelessWidget {
+class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen>
+    with TickerProviderStateMixin {
+  late AnimationController _logoController;
+  late AnimationController _textController;
+  late AnimationController _glowController;
+
+  late Animation<double> _logoScale;
+  late Animation<double> _logoRotation;
+  late Animation<double> _textFade;
+  late Animation<double> _glowAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Logo animations
+    _logoController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+
+    _logoScale = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _logoController, curve: Curves.elasticOut),
+    );
+
+    _logoRotation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _logoController, curve: Curves.easeInOut),
+    );
+
+    // Text animation
+    _textController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+
+    _textFade = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _textController, curve: Curves.easeInOut),
+    );
+
+    // Glow animation
+    _glowController = AnimationController(
+      duration: const Duration(milliseconds: 2000),
+      vsync: this,
+    );
+
+    _glowAnimation = Tween<double>(begin: 0.3, end: 1.0).animate(
+      CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
+    );
+
+    // Start animations
+    _startAnimations();
+  }
+
+  void _startAnimations() async {
+    // Start logo animation
+    _logoController.forward();
+
+    // Start glow animation (continuous)
+    _glowController.repeat(reverse: true);
+
+    // Start text animation after delay
+    await Future.delayed(const Duration(milliseconds: 800));
+    _textController.forward();
+
+    // Navigate to login after splash duration
+    await Future.delayed(const Duration(milliseconds: 2000));
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _logoController.dispose();
+    _textController.dispose();
+    _glowController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Logo o icono de la app
-            Container(
-              width: 80.w,
-              height: 80.w,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF9333EA), Color(0xFFEC4899)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(20.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF9333EA).withValues(alpha: 0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
+      backgroundColor: const Color(0xFF121212),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment.center,
+            radius: 1.2,
+            colors: [
+              const Color(0xFF9333EA).withValues(alpha: 0.1),
+              const Color(0xFF121212),
+            ],
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Animated Logo
+              AnimatedBuilder(
+                animation: _logoController,
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale: _logoScale.value,
+                    child: Transform.rotate(
+                      angle: _logoRotation.value * 0.1,
+                      child: Container(
+                        width: 120.w,
+                        height: 120.w,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF9333EA), Color(0xFFEC4899)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(30.r),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(
+                                0xFF9333EA,
+                              ).withValues(alpha: _glowAnimation.value * 0.4),
+                              blurRadius: 30,
+                              offset: const Offset(0, 15),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.chat_bubble_outline,
+                          color: Colors.white,
+                          size: 60,
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
-              child: const Icon(
-                Icons.chat_bubble_outline,
-                color: Colors.white,
-                size: 40,
+
+              SizedBox(height: 32.h),
+
+              // Animated Title
+              AnimatedBuilder(
+                animation: _textFade,
+                builder: (context, child) {
+                  return Opacity(
+                    opacity: _textFade.value,
+                    child: ShaderMask(
+                      shaderCallback: (bounds) => const LinearGradient(
+                        colors: [Color(0xFF9333EA), Color(0xFFEC4899)],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ).createShader(bounds),
+                      child: Text(
+                        'R3.chat',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 36.sp,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
-            ),
-            SizedBox(height: 24.h),
-            Text(
-              'R3 Chat',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+
+              SizedBox(height: 16.h),
+
+              // Animated Subtitle
+              AnimatedBuilder(
+                animation: _textFade,
+                builder: (context, child) {
+                  return Opacity(
+                    opacity: _textFade.value,
+                    child: Text(
+                      'Conectando con IA...',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  );
+                },
               ),
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              'Conectando con IA...',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.white70,
+
+              SizedBox(height: 48.h),
+
+              // Animated Loading Indicator
+              AnimatedBuilder(
+                animation: _textFade,
+                builder: (context, child) {
+                  return Opacity(
+                    opacity: _textFade.value,
+                    child: SizedBox(
+                      width: 40.w,
+                      height: 40.w,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          const Color(
+                            0xFF9333EA,
+                          ).withValues(alpha: _glowAnimation.value),
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
-            ),
-            SizedBox(height: 32.h),
-            const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF9333EA)),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
-

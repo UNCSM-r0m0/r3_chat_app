@@ -14,11 +14,7 @@ import 'package:r3_chat_app/main.dart';
 void main() {
   testWidgets('R3 Chat app smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(
-      const ProviderScope(
-        child: R3ChatApp(),
-      ),
-    );
+    await tester.pumpWidget(const ProviderScope(child: R3ChatApp()));
 
     // Verify that our splash screen is displayed.
     expect(find.text('R3 Chat'), findsOneWidget);
