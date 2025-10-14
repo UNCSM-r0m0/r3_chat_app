@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../widgets/chat_area.dart';
+import '../widgets/drawer_menu.dart';
 import '../widgets/chat_input.dart';
 import '../providers/chat_providers.dart';
 
@@ -29,6 +30,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF111827), // gray-900
       appBar: _buildAppBar(),
+      drawer: const DrawerMenu(),
       resizeToAvoidBottomInset: true,
       body: Column(
         children: [
