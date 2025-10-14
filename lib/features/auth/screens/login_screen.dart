@@ -309,7 +309,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
         // Mostrar mensaje de éxito
         if (mounted) {
-          if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('¡Bienvenido, ${result.user!.name}!'),
@@ -328,11 +327,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result.error ?? 'Error desconocido'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+            SnackBar(
+              content: Text(result.error ?? 'Error desconocido'),
+              backgroundColor: AppColors.error,
+            ),
+          );
         }
       }
     } catch (error) {
@@ -375,11 +374,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('¡Bienvenido, ${result.user!.name}!'),
-            backgroundColor: AppColors.success,
-          ),
-        );
+            SnackBar(
+              content: Text('¡Bienvenido, ${result.user!.name}!'),
+              backgroundColor: AppColors.success,
+            ),
+          );
         }
 
         // TODO: Navegar a la pantalla principal
@@ -391,11 +390,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result.error ?? 'Error desconocido'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+            SnackBar(
+              content: Text(result.error ?? 'Error desconocido'),
+              backgroundColor: AppColors.error,
+            ),
+          );
         }
       }
     } catch (error) {

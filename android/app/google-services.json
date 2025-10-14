@@ -1,13 +1,13 @@
 {
   "project_info": {
     "project_number": "879782902938",
-    "project_id": "r3-chat-app",
-    "storage_bucket": "r3-chat-app.appspot.com"
+    "project_id": "t3-chat-r0lm0",
+    "storage_bucket": "t3-chat-r0lm0.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:879782902938:android:your_android_app_id",
+        "mobilesdk_app_id": "1:879782902938:android:1234567890abcdef",
         "android_client_info": {
           "package_name": "dev.r3chat.r3_chat_app"
         }
@@ -15,12 +15,20 @@
       "oauth_client": [
         {
           "client_id": "879782902938-2uafilq8en2mhertill5218t5hdct0i8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "dev.r3chat.r3_chat_app",
+            "certificate_hash": "sha1_certificate_hash_here"
+          }
+        },
+        {
+          "client_id": "879782902938-2uafilq8en2mhertill5218t5hdct0i8.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "your_android_api_key"
+          "current_key": "AIzaSyDummyKeyForAndroidApp"
         }
       ],
       "services": {
