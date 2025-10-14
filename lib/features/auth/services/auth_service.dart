@@ -13,7 +13,7 @@ class AuthService {
     scopes: ['email', 'profile'],
     // Usar el Client ID de tu configuración
     serverClientId:
-        '879782902938-2uafilq8en2mhertill5218t5hdct0i8.apps.googleusercontent.com',
+        '1079549506133-2ot3e6ehdv92ms53dji0cb2lspnp6i52.apps.googleusercontent.com',
   );
 
   /// Iniciar sesión con Google
