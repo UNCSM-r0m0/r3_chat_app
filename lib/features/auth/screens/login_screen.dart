@@ -3,9 +3,18 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:feather_icons/feather_icons.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/logger.dart';
+import '../services/auth_service.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final AuthService _authService = AuthService();
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -133,6 +142,17 @@ class LoginScreen extends StatelessWidget {
                         // GitHub Sign In Button
                         _buildGitHubButton(context),
 
+                        if (_isLoading) ...[
+                          SizedBox(height: 16.h),
+                          const Center(
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+
                         SizedBox(height: 24.h),
 
                         // Terms and Privacy
@@ -192,10 +212,19 @@ class LoginScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(12.r),
         ),
         child: ElevatedButton.icon(
-          onPressed: () => _handleGoogleSignIn(context),
-          icon: const Icon(Icons.g_mobiledata, size: 20, color: Colors.white),
+          onPressed: _isLoading ? null : () => _handleGoogleSignIn(context),
+          icon: _isLoading
+              ? SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : const Icon(Icons.g_mobiledata, size: 20, color: Colors.white),
           label: Text(
-            'Continue with Google',
+            _isLoading ? 'Iniciando sesión...' : 'Continue with Google',
             style: TextStyle(
               fontSize: 16.sp,
               fontWeight: FontWeight.w600,
@@ -221,14 +250,25 @@ class LoginScreen extends StatelessWidget {
       width: double.infinity,
       height: 56.h,
       child: ElevatedButton.icon(
-        onPressed: () => _handleGitHubSignIn(context),
-        icon: const Icon(
-          FeatherIcons.github,
-          size: 20,
-          color: AppColors.textPrimary,
-        ),
+        onPressed: _isLoading ? null : () => _handleGitHubSignIn(context),
+        icon: _isLoading
+            ? SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppColors.textPrimary,
+                  ),
+                ),
+              )
+            : const Icon(
+                FeatherIcons.github,
+                size: 20,
+                color: AppColors.textPrimary,
+              ),
         label: Text(
-          'Continue with GitHub',
+          _isLoading ? 'Iniciando sesión...' : 'Continue with GitHub',
           style: TextStyle(
             fontSize: 16.sp,
             fontWeight: FontWeight.w600,
@@ -249,37 +289,132 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
-  void _handleGoogleSignIn(BuildContext context) {
+  Future<void> _handleGoogleSignIn(BuildContext context) async {
+    if (_isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
     AppLogger.auth(
       '🔐 Usuario intenta iniciar sesión con Google',
       tag: 'LOGIN',
     );
 
-    // TODO: Implement Google OAuth
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Google Sign In - Próximamente'),
-        backgroundColor: AppColors.primary,
-      ),
-    );
+    try {
+      final result = await _authService.signInWithGoogle();
 
-    AppLogger.warning('⚠️ Google OAuth no implementado aún', tag: 'LOGIN');
+      if (result.success && result.user != null) {
+        AppLogger.success('🎉 Autenticación exitosa con Google', tag: 'LOGIN');
+
+        // Mostrar mensaje de éxito
+        if (mounted) {
+          if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('¡Bienvenido, ${result.user!.name}!'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        }
+
+        // TODO: Navegar a la pantalla principal
+        // Navigator.of(context).pushReplacementNamed('/home');
+      } else {
+        AppLogger.error(
+          '❌ Error en autenticación: ${result.error}',
+          tag: 'LOGIN',
+        );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.error ?? 'Error desconocido'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        }
+      }
+    } catch (error) {
+      AppLogger.error(
+        '💥 Error inesperado en Google Sign-In',
+        tag: 'LOGIN',
+        error: error,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Error inesperado. Inténtalo de nuevo.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
-  void _handleGitHubSignIn(BuildContext context) {
+  Future<void> _handleGitHubSignIn(BuildContext context) async {
+    if (_isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
     AppLogger.auth(
       '🔐 Usuario intenta iniciar sesión con GitHub',
       tag: 'LOGIN',
     );
 
-    // TODO: Implement GitHub OAuth
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('GitHub Sign In - Próximamente'),
-        backgroundColor: AppColors.primary,
-      ),
-    );
+    try {
+      final result = await _authService.signInWithGitHub();
 
-    AppLogger.warning('⚠️ GitHub OAuth no implementado aún', tag: 'LOGIN');
+      if (result.success && result.user != null) {
+        AppLogger.success('🎉 Autenticación exitosa con GitHub', tag: 'LOGIN');
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('¡Bienvenido, ${result.user!.name}!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        }
+
+        // TODO: Navegar a la pantalla principal
+      } else {
+        AppLogger.error(
+          '❌ Error en autenticación: ${result.error}',
+          tag: 'LOGIN',
+        );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.error ?? 'Error desconocido'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        }
+      }
+    } catch (error) {
+      AppLogger.error(
+        '💥 Error inesperado en GitHub Sign-In',
+        tag: 'LOGIN',
+        error: error,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Error inesperado. Inténtalo de nuevo.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 }
