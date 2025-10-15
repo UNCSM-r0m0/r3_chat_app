@@ -34,6 +34,7 @@ abstract class ChatState with _$ChatState {
     @Default(false) bool isLoading,
     @Default(false) bool isStreaming,
     String? selectedModel,
+    String? currentChatId,
     String? error,
   }) = _ChatState;
 

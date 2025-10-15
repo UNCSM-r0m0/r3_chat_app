@@ -293,7 +293,7 @@ as bool?,
 /// @nodoc
 mixin _$ChatState {
 
- List<ChatMessage> get messages; bool get isLoading; bool get isStreaming; String? get selectedModel; String? get error;
+ List<ChatMessage> get messages; bool get isLoading; bool get isStreaming; String? get selectedModel; String? get currentChatId; String? get error;
 /// Create a copy of ChatState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -306,16 +306,16 @@ $ChatStateCopyWith<ChatState> get copyWith => _$ChatStateCopyWithImpl<ChatState>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatState&&const DeepCollectionEquality().equals(other.messages, messages)&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading)&&(identical(other.isStreaming, isStreaming) || other.isStreaming == isStreaming)&&(identical(other.selectedModel, selectedModel) || other.selectedModel == selectedModel)&&(identical(other.error, error) || other.error == error));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatState&&const DeepCollectionEquality().equals(other.messages, messages)&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading)&&(identical(other.isStreaming, isStreaming) || other.isStreaming == isStreaming)&&(identical(other.selectedModel, selectedModel) || other.selectedModel == selectedModel)&&(identical(other.currentChatId, currentChatId) || other.currentChatId == currentChatId)&&(identical(other.error, error) || other.error == error));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(messages),isLoading,isStreaming,selectedModel,error);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(messages),isLoading,isStreaming,selectedModel,currentChatId,error);
 
 @override
 String toString() {
-  return 'ChatState(messages: $messages, isLoading: $isLoading, isStreaming: $isStreaming, selectedModel: $selectedModel, error: $error)';
+  return 'ChatState(messages: $messages, isLoading: $isLoading, isStreaming: $isStreaming, selectedModel: $selectedModel, currentChatId: $currentChatId, error: $error)';
 }
 
 
@@ -326,7 +326,7 @@ abstract mixin class $ChatStateCopyWith<$Res>  {
   factory $ChatStateCopyWith(ChatState value, $Res Function(ChatState) _then) = _$ChatStateCopyWithImpl;
 @useResult
 $Res call({
- List<ChatMessage> messages, bool isLoading, bool isStreaming, String? selectedModel, String? error
+ List<ChatMessage> messages, bool isLoading, bool isStreaming, String? selectedModel, String? currentChatId, String? error
 });
 
 
@@ -343,12 +343,13 @@ class _$ChatStateCopyWithImpl<$Res>
 
 /// Create a copy of ChatState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? messages = null,Object? isLoading = null,Object? isStreaming = null,Object? selectedModel = freezed,Object? error = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? messages = null,Object? isLoading = null,Object? isStreaming = null,Object? selectedModel = freezed,Object? currentChatId = freezed,Object? error = freezed,}) {
   return _then(_self.copyWith(
 messages: null == messages ? _self.messages : messages // ignore: cast_nullable_to_non_nullable
 as List<ChatMessage>,isLoading: null == isLoading ? _self.isLoading : isLoading // ignore: cast_nullable_to_non_nullable
 as bool,isStreaming: null == isStreaming ? _self.isStreaming : isStreaming // ignore: cast_nullable_to_non_nullable
 as bool,selectedModel: freezed == selectedModel ? _self.selectedModel : selectedModel // ignore: cast_nullable_to_non_nullable
+as String?,currentChatId: freezed == currentChatId ? _self.currentChatId : currentChatId // ignore: cast_nullable_to_non_nullable
 as String?,error: freezed == error ? _self.error : error // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
@@ -435,10 +436,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<ChatMessage> messages,  bool isLoading,  bool isStreaming,  String? selectedModel,  String? error)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<ChatMessage> messages,  bool isLoading,  bool isStreaming,  String? selectedModel,  String? currentChatId,  String? error)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ChatState() when $default != null:
-return $default(_that.messages,_that.isLoading,_that.isStreaming,_that.selectedModel,_that.error);case _:
+return $default(_that.messages,_that.isLoading,_that.isStreaming,_that.selectedModel,_that.currentChatId,_that.error);case _:
   return orElse();
 
 }
@@ -456,10 +457,10 @@ return $default(_that.messages,_that.isLoading,_that.isStreaming,_that.selectedM
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<ChatMessage> messages,  bool isLoading,  bool isStreaming,  String? selectedModel,  String? error)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<ChatMessage> messages,  bool isLoading,  bool isStreaming,  String? selectedModel,  String? currentChatId,  String? error)  $default,) {final _that = this;
 switch (_that) {
 case _ChatState():
-return $default(_that.messages,_that.isLoading,_that.isStreaming,_that.selectedModel,_that.error);case _:
+return $default(_that.messages,_that.isLoading,_that.isStreaming,_that.selectedModel,_that.currentChatId,_that.error);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -476,10 +477,10 @@ return $default(_that.messages,_that.isLoading,_that.isStreaming,_that.selectedM
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<ChatMessage> messages,  bool isLoading,  bool isStreaming,  String? selectedModel,  String? error)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<ChatMessage> messages,  bool isLoading,  bool isStreaming,  String? selectedModel,  String? currentChatId,  String? error)?  $default,) {final _that = this;
 switch (_that) {
 case _ChatState() when $default != null:
-return $default(_that.messages,_that.isLoading,_that.isStreaming,_that.selectedModel,_that.error);case _:
+return $default(_that.messages,_that.isLoading,_that.isStreaming,_that.selectedModel,_that.currentChatId,_that.error);case _:
   return null;
 
 }
@@ -491,7 +492,7 @@ return $default(_that.messages,_that.isLoading,_that.isStreaming,_that.selectedM
 @JsonSerializable()
 
 class _ChatState implements ChatState {
-  const _ChatState({final  List<ChatMessage> messages = const <ChatMessage>[], this.isLoading = false, this.isStreaming = false, this.selectedModel, this.error}): _messages = messages;
+  const _ChatState({final  List<ChatMessage> messages = const <ChatMessage>[], this.isLoading = false, this.isStreaming = false, this.selectedModel, this.currentChatId, this.error}): _messages = messages;
   factory _ChatState.fromJson(Map<String, dynamic> json) => _$ChatStateFromJson(json);
 
  final  List<ChatMessage> _messages;
@@ -504,6 +505,7 @@ class _ChatState implements ChatState {
 @override@JsonKey() final  bool isLoading;
 @override@JsonKey() final  bool isStreaming;
 @override final  String? selectedModel;
+@override final  String? currentChatId;
 @override final  String? error;
 
 /// Create a copy of ChatState
@@ -519,16 +521,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatState&&const DeepCollectionEquality().equals(other._messages, _messages)&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading)&&(identical(other.isStreaming, isStreaming) || other.isStreaming == isStreaming)&&(identical(other.selectedModel, selectedModel) || other.selectedModel == selectedModel)&&(identical(other.error, error) || other.error == error));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatState&&const DeepCollectionEquality().equals(other._messages, _messages)&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading)&&(identical(other.isStreaming, isStreaming) || other.isStreaming == isStreaming)&&(identical(other.selectedModel, selectedModel) || other.selectedModel == selectedModel)&&(identical(other.currentChatId, currentChatId) || other.currentChatId == currentChatId)&&(identical(other.error, error) || other.error == error));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_messages),isLoading,isStreaming,selectedModel,error);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_messages),isLoading,isStreaming,selectedModel,currentChatId,error);
 
 @override
 String toString() {
-  return 'ChatState(messages: $messages, isLoading: $isLoading, isStreaming: $isStreaming, selectedModel: $selectedModel, error: $error)';
+  return 'ChatState(messages: $messages, isLoading: $isLoading, isStreaming: $isStreaming, selectedModel: $selectedModel, currentChatId: $currentChatId, error: $error)';
 }
 
 
@@ -539,7 +541,7 @@ abstract mixin class _$ChatStateCopyWith<$Res> implements $ChatStateCopyWith<$Re
   factory _$ChatStateCopyWith(_ChatState value, $Res Function(_ChatState) _then) = __$ChatStateCopyWithImpl;
 @override @useResult
 $Res call({
- List<ChatMessage> messages, bool isLoading, bool isStreaming, String? selectedModel, String? error
+ List<ChatMessage> messages, bool isLoading, bool isStreaming, String? selectedModel, String? currentChatId, String? error
 });
 
 
@@ -556,12 +558,13 @@ class __$ChatStateCopyWithImpl<$Res>
 
 /// Create a copy of ChatState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? messages = null,Object? isLoading = null,Object? isStreaming = null,Object? selectedModel = freezed,Object? error = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? messages = null,Object? isLoading = null,Object? isStreaming = null,Object? selectedModel = freezed,Object? currentChatId = freezed,Object? error = freezed,}) {
   return _then(_ChatState(
 messages: null == messages ? _self._messages : messages // ignore: cast_nullable_to_non_nullable
 as List<ChatMessage>,isLoading: null == isLoading ? _self.isLoading : isLoading // ignore: cast_nullable_to_non_nullable
 as bool,isStreaming: null == isStreaming ? _self.isStreaming : isStreaming // ignore: cast_nullable_to_non_nullable
 as bool,selectedModel: freezed == selectedModel ? _self.selectedModel : selectedModel // ignore: cast_nullable_to_non_nullable
+as String?,currentChatId: freezed == currentChatId ? _self.currentChatId : currentChatId // ignore: cast_nullable_to_non_nullable
 as String?,error: freezed == error ? _self.error : error // ignore: cast_nullable_to_non_nullable
 as String?,
   ));

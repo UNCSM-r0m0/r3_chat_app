@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/chat_providers.dart';
+import '../services/chat_service.dart';
 
 /// Widget para seleccionar modelo de IA
 class ModelSelector extends ConsumerWidget {
@@ -9,7 +10,7 @@ class ModelSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final chatState = ref.watch(chatStateProvider);
-    final selectedModel = chatState.selectedModel ?? 'gpt-4';
+    final selectedModel = chatState.selectedModel ?? 'deepseek';
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -45,36 +46,45 @@ class ModelSelector extends ConsumerWidget {
 
   /// Construir opciones de modelos
   List<Widget> _buildModelOptions(String selectedModel, WidgetRef ref) {
-    final models = [
-      _ModelOption(
-        id: 'gpt-4',
-        name: 'GPT-4',
-        description: 'Más inteligente',
-        isPremium: true,
-        color: Colors.blue,
-      ),
-      _ModelOption(
-        id: 'gpt-3.5-turbo',
-        name: 'GPT-3.5',
-        description: 'Rápido y eficiente',
+    final chatService = ChatService();
+    final availableModels = chatService.getAvailableModels();
+
+    final modelConfigs = {
+      'ollama': _ModelOption(
+        id: 'ollama',
+        name: 'Ollama',
+        description: 'Local y rápido',
         isPremium: false,
         color: Colors.green,
       ),
-      _ModelOption(
-        id: 'claude-3',
-        name: 'Claude 3',
-        description: 'Análisis detallado',
-        isPremium: true,
-        color: Colors.orange,
-      ),
-      _ModelOption(
-        id: 'gemini-pro',
-        name: 'Gemini Pro',
-        description: 'Multimodal',
+      'gemini': _ModelOption(
+        id: 'gemini',
+        name: 'Gemini',
+        description: 'Google AI',
         isPremium: false,
+        color: Colors.blue,
+      ),
+      'openai': _ModelOption(
+        id: 'openai',
+        name: 'OpenAI',
+        description: 'GPT models',
+        isPremium: true,
         color: Colors.purple,
       ),
-    ];
+      'deepseek': _ModelOption(
+        id: 'deepseek',
+        name: 'DeepSeek',
+        description: 'Avanzado',
+        isPremium: false,
+        color: Colors.orange,
+      ),
+    };
+
+    final models = availableModels
+        .map((modelId) => modelConfigs[modelId])
+        .where((model) => model != null)
+        .cast<_ModelOption>()
+        .toList();
 
     return models.map((model) {
       final isSelected = selectedModel == model.id;

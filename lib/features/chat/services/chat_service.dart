@@ -28,6 +28,7 @@ class ChatService {
     required String message,
     required String model,
     List<ChatMessage>? conversationHistory,
+    String? conversationId,
   }) async {
     try {
       AppLogger.chat('📤 Enviando mensaje: $message', tag: 'CHAT_SERVICE');
@@ -35,10 +36,7 @@ class ChatService {
       final payload = {
         'content': message,
         'model': model,
-        if (conversationHistory != null)
-          'messages': conversationHistory
-              .map((m) => {'role': m.role.name, 'content': m.content})
-              .toList(),
+        if (conversationId != null) 'conversationId': conversationId,
       };
 
       final token = await _auth.getToken();
@@ -54,13 +52,18 @@ class ChatService {
           ? res.data as Map<String, dynamic>
           : Map<String, dynamic>.from(res.data);
 
-      // Backend devuelve { response: string, model: string, tokensUsed: number, ... }
+      // Backend devuelve { conversationId, message: { id, role, content, createdAt, tokensUsed }, remaining, limit, tier }
+      final messageData = data['message'] as Map<String, dynamic>?;
       final assistant = ChatMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id:
+            messageData?['id']?.toString() ??
+            DateTime.now().millisecondsSinceEpoch.toString(),
         role: ChatRole.assistant,
-        content: data['response']?.toString() ?? 'Sin respuesta',
-        timestamp: DateTime.now(),
-        model: data['model']?.toString() ?? model,
+        content: messageData?['content']?.toString() ?? 'Sin respuesta',
+        timestamp:
+            DateTime.tryParse(messageData?['createdAt']?.toString() ?? '') ??
+            DateTime.now(),
+        model: model,
       );
 
       AppLogger.chat('📥 Respuesta recibida del backend', tag: 'CHAT_SERVICE');
@@ -87,7 +90,10 @@ class ChatService {
           headers: {if (token != null) 'Authorization': 'Bearer $token'},
         ),
       );
-      final list = (res.data as List<dynamic>).cast<dynamic>();
+      // El backend devuelve { success: true, data: chats[], message: '...' }
+      final data = res.data as Map<String, dynamic>;
+      final list = data['data'] as List<dynamic>? ?? [];
+
       final chats = list.map<Chat>((item) {
         final map = item is Map<String, dynamic>
             ? item
@@ -180,6 +186,11 @@ class ChatService {
       );
       rethrow;
     }
+  }
+
+  /// Obtener modelos disponibles
+  List<String> getAvailableModels() {
+    return ['ollama', 'gemini', 'openai', 'deepseek'];
   }
 
   /// Generar respuesta mock para pruebas

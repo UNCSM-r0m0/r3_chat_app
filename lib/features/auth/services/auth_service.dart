@@ -12,7 +12,7 @@ class AuthService {
   static const String _backendUrl =
       'https://jeanett-uncolorable-pickily.ngrok-free.dev';
 
-  static const _tokenKey = 'auth_token';
+  static const _tokenKey = 'jwt_token';
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   // Google Sign-In instance

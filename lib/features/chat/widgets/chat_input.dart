@@ -261,7 +261,7 @@ class _ChatInputState extends ConsumerState<ChatInput> {
     if (text.isEmpty) return;
 
     final chatState = ref.read(chatStateProvider);
-    final model = chatState.selectedModel ?? 'gpt-4';
+    final model = chatState.selectedModel ?? 'deepseek';
 
     ref.read(chatStateProvider.notifier).sendMessage(text, model);
     _controller.clear();

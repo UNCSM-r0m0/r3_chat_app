@@ -48,7 +48,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       final response = await _chatService.sendMessage(
         message: message,
         model: model,
-        conversationHistory: state.messages,
+        conversationId: state.currentChatId,
       );
 
       // Agregar respuesta

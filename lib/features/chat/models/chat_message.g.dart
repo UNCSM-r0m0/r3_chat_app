@@ -40,6 +40,7 @@ _ChatState _$ChatStateFromJson(Map<String, dynamic> json) => _ChatState(
   isLoading: json['isLoading'] as bool? ?? false,
   isStreaming: json['isStreaming'] as bool? ?? false,
   selectedModel: json['selectedModel'] as String?,
+  currentChatId: json['currentChatId'] as String?,
   error: json['error'] as String?,
 );
 
@@ -49,6 +50,7 @@ Map<String, dynamic> _$ChatStateToJson(_ChatState instance) =>
       'isLoading': instance.isLoading,
       'isStreaming': instance.isStreaming,
       'selectedModel': instance.selectedModel,
+      'currentChatId': instance.currentChatId,
       'error': instance.error,
     };
 
