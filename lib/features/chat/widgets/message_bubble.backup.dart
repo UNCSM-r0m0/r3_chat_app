@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import '../models/chat_message.dart';
 
 /// Widget para mostrar un mensaje en el chat
@@ -122,26 +121,6 @@ class MessageBubble extends StatelessWidget {
         ),
       );
     } else {
-      final mermaidMatch = RegExp(r'```mermaid\s+([\s\S]*?)```', multiLine: true).firstMatch(message.content);
-      if (mermaidMatch != null) {
-        final diagram = mermaidMatch.group(1) ?? '';
-        return SizedBox(
-          height: 220,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: WebView(
-              javascriptMode: JavascriptMode.unrestricted,
-              backgroundColor: const Color(0xFF1F2937),
-              initialUrl: Uri.dataFromString(
-                _mermaidHtml(diagram),
-                mimeType: 'text/html',
-                encoding: const Utf8Codec(),
-              ).toString(),
-            ),
-          ),
-        );
-      }
-
       return MarkdownBody(
         data: message.content,
         styleSheet: MarkdownStyleSheet(
@@ -184,28 +163,6 @@ class MessageBubble extends StatelessWidget {
     }
   }
 
-  String _mermaidHtml(String code) {
-    // HTML mínimo para renderizar mermaid en WebView móvil
-    return '''
-<!doctype html>
-<html>
-<head>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style> body{margin:0;background:#111;color:#eee} .m{padding:8px} </style>
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-  <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
-  </head>
-<body>
-  <div class="m">
-    <div class="mermaid">
-${code}
-    </div>
-  </div>
-</body>
-</html>
-''';
-  }
-
   /// Widget para el timestamp
   Widget _buildTimestamp() {
     final isUser = message.role == ChatRole.user;
@@ -238,3 +195,4 @@ ${code}
     }
   }
 }
+
