@@ -148,7 +148,10 @@ flutter_native_splash:
   android: true
   ios: true
   web: false
-  android_gravity: center
+  # En iOS ajusta la imagen sin recortes
+  ios_content_mode: scaleAspectFit
+  # En Android mueve la imagen hacia arriba para evitar recorte con la barra de navegación
+  android_gravity: top|center_horizontal
   android_12:
     color: "#111827"
     color_dark: "#0B1226"
