@@ -116,7 +116,7 @@ class _SplashScreenState extends State<SplashScreen>
     AppLogger.debug('Text animation iniciada', tag: 'SPLASH');
 
     // Navigate to login after splash duration
-    await Future.delayed(const Duration(milliseconds: 2000));
+    await Future.delayed(const Duration(milliseconds: 3000));
     if (mounted) {
       AppLogger.info('🔄 Navegando a pantalla de login', tag: 'SPLASH');
       Navigator.of(context).pushReplacement(
