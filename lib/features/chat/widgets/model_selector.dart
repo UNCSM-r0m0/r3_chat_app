@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/chat_providers.dart';
+import '../providers/models_providers.dart';
+import '../models/ai_model.dart';
 import '../../auth/providers/auth_providers.dart';
-import '../services/chat_service.dart';
 
 /// Widget para seleccionar modelo de IA
 class ModelSelector extends ConsumerWidget {
@@ -12,7 +13,9 @@ class ModelSelector extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final chatState = ref.watch(chatStateProvider);
     final isPro = ref.watch(authStateProvider).isPro;
-    final selectedModel = chatState.selectedModel ?? (isPro ? 'deepseek' : 'ollama');
+    final selectedModel =
+        chatState.selectedModel ?? (isPro ? 'deepseek' : 'ollama');
+    final modelsAsync = ref.watch(availableModelsProvider);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -27,134 +30,210 @@ class ModelSelector extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Seleccionar Modelo',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Seleccionar Modelo',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              IconButton(
+                onPressed: () {
+                  ref.read(availableModelsStateProvider.notifier).refresh();
+                },
+                icon: const Icon(
+                  Icons.refresh,
+                  color: Colors.white70,
+                  size: 18,
+                ),
+                tooltip: 'Refrescar modelos',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _buildModelOptions(selectedModel, ref),
+          modelsAsync.when(
+            data: (models) =>
+                _buildModelsList(models, selectedModel, isPro, ref),
+            loading: () => _buildLoadingState(),
+            error: (error, stackTrace) => _buildErrorState(error),
           ),
         ],
       ),
     );
   }
 
-  /// Construir opciones de modelos
-  List<Widget> _buildModelOptions(String selectedModel, WidgetRef ref) {
-    final chatService = ChatService();
-    final isPro = ref.read(authStateProvider).isPro;
-    final availableModels = isPro ? chatService.getAvailableModels() : ['ollama'];
-
-    final modelConfigs = {
-      'ollama': _ModelOption(
-        id: 'ollama',
-        name: 'Ollama',
-        description: 'Local y rápido',
-        isPremium: false,
-        color: Colors.green,
-      ),
-      'gemini': _ModelOption(
-        id: 'gemini',
-        name: 'Gemini',
-        description: 'Google AI',
-        isPremium: false,
-        color: Colors.blue,
-      ),
-      'openai': _ModelOption(
-        id: 'openai',
-        name: 'OpenAI',
-        description: 'GPT models',
-        isPremium: true,
-        color: Colors.purple,
-      ),
-      'deepseek': _ModelOption(
-        id: 'deepseek',
-        name: 'DeepSeek',
-        description: 'Avanzado',
-        isPremium: false,
-        color: Colors.orange,
-      ),
-    };
-
-    final models = availableModels
-        .map((modelId) => modelConfigs[modelId])
-        .where((model) => model != null)
-        .cast<_ModelOption>()
+  /// Construir lista de modelos disponibles
+  Widget _buildModelsList(
+    List<AIModel> models,
+    String selectedModel,
+    bool isPro,
+    WidgetRef ref,
+  ) {
+    // Filtrar modelos según el tier del usuario
+    final availableModels = models
+        .where((model) => !model.isPremium || isPro)
         .toList();
 
-    return models.map((model) {
-      final isSelected = selectedModel == model.id;
-
-      return GestureDetector(
-        onTap: () {
-          ref.read(chatStateProvider.notifier).selectModel(model.id);
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? model.color.withOpacity(0.2)
-                : const Color(0xFF4B5563), // gray-600
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: isSelected
-                  ? model.color
-                  : const Color(0xFF6B7280), // gray-500
-              width: isSelected ? 2 : 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: model.color,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                model.name,
-                style: TextStyle(
-                  color: isSelected ? model.color : Colors.white,
-                  fontSize: 12,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                ),
-              ),
-              if (model.isPremium) ...[
-                const SizedBox(width: 4),
-                const Icon(Icons.star, color: Colors.amber, size: 12),
-              ],
-            ],
-          ),
+    if (availableModels.isEmpty) {
+      return const Center(
+        child: Text(
+          'No hay modelos disponibles',
+          style: TextStyle(color: Colors.white70),
         ),
       );
-    }).toList();
+    }
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: availableModels
+          .map((model) => _buildModelOption(model, selectedModel, ref))
+          .toList(),
+    );
   }
-}
 
-/// Clase para representar una opción de modelo
-class _ModelOption {
-  final String id;
-  final String name;
-  final String description;
-  final bool isPremium;
-  final Color color;
+  /// Construir estado de carga
+  Widget _buildLoadingState() {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF8B5CF6)),
+        ),
+      ),
+    );
+  }
 
-  const _ModelOption({
-    required this.id,
-    required this.name,
-    required this.description,
-    required this.isPremium,
-    required this.color,
-  });
+  /// Construir estado de error
+  Widget _buildErrorState(Object error) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.red, size: 32),
+            const SizedBox(height: 8),
+            Text(
+              'Error cargando modelos',
+              style: const TextStyle(color: Colors.red, fontSize: 14),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              error.toString(),
+              style: const TextStyle(color: Colors.white54, fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Construir opción de modelo individual
+  Widget _buildModelOption(AIModel model, String selectedModel, WidgetRef ref) {
+    final isSelected = selectedModel == model.id;
+    final isUnavailable = !model.available;
+
+    return GestureDetector(
+      onTap: isUnavailable
+          ? null
+          : () {
+              ref.read(chatStateProvider.notifier).selectModel(model.id);
+            },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isUnavailable
+              ? const Color(0xFF2D3748) // gray-800 cuando no está disponible
+              : isSelected
+              ? _getModelColor(model.id).withOpacity(0.2)
+              : const Color(0xFF4B5563), // gray-600
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isUnavailable
+                ? const Color(0xFF4A5568) // gray-700 cuando no está disponible
+                : isSelected
+                ? _getModelColor(model.id)
+                : const Color(0xFF6B7280), // gray-500
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: isUnavailable ? Colors.grey : _getModelColor(model.id),
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  model.name,
+                  style: TextStyle(
+                    color: isUnavailable
+                        ? Colors.white54
+                        : isSelected
+                        ? _getModelColor(model.id)
+                        : Colors.white,
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  ),
+                ),
+                if (model.isPremium) ...[
+                  const SizedBox(height: 2),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.star, color: Colors.amber, size: 10),
+                      const SizedBox(width: 2),
+                      Text(
+                        'Premium',
+                        style: TextStyle(
+                          color: isUnavailable ? Colors.white38 : Colors.amber,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+            if (isUnavailable) ...[
+              const SizedBox(width: 4),
+              const Icon(Icons.block, color: Colors.red, size: 12),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Obtener color del modelo según su ID
+  Color _getModelColor(String modelId) {
+    switch (modelId) {
+      case 'ollama':
+        return Colors.green;
+      case 'gemini':
+        return Colors.blue;
+      case 'openai':
+        return Colors.purple;
+      case 'deepseek':
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
+  }
 }

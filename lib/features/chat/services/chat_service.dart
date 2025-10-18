@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import '../../../core/utils/logger.dart';
 import '../../auth/services/auth_service.dart';
 import '../models/chat_message.dart';
+import '../models/ai_model.dart';
 
 /// Servicio para manejar operaciones de chat
 class ChatService {
@@ -218,61 +219,143 @@ class ChatService {
 
       final messagesList = (data['messages'] as List<dynamic>? ?? [])
           .map<ChatMessage>((m) {
-        final mm = m is Map<String, dynamic> ? m : Map<String, dynamic>.from(m);
-        final roleStr = (mm['role'] ?? mm['sender'] ?? 'assistant').toString();
-        final role = roleStr.toLowerCase() == 'user'
-            ? ChatRole.user
-            : roleStr.toLowerCase() == 'system'
+            final mm = m is Map<String, dynamic>
+                ? m
+                : Map<String, dynamic>.from(m);
+            final roleStr = (mm['role'] ?? mm['sender'] ?? 'assistant')
+                .toString();
+            final role = roleStr.toLowerCase() == 'user'
+                ? ChatRole.user
+                : roleStr.toLowerCase() == 'system'
                 ? ChatRole.system
                 : ChatRole.assistant;
-        return ChatMessage(
-          id: (mm['id'] ?? mm['messageId'] ??
-                  DateTime.now().millisecondsSinceEpoch.toString())
-              .toString(),
-          role: role,
-          content: (mm['content'] ?? mm['text'] ?? '').toString(),
-          timestamp: DateTime.tryParse((mm['createdAt'] ?? mm['timestamp'] ?? '')
-                  .toString()) ??
-              DateTime.now(),
-        );
-      }).toList();
+            return ChatMessage(
+              id:
+                  (mm['id'] ??
+                          mm['messageId'] ??
+                          DateTime.now().millisecondsSinceEpoch.toString())
+                      .toString(),
+              role: role,
+              content: (mm['content'] ?? mm['text'] ?? '').toString(),
+              timestamp:
+                  DateTime.tryParse(
+                    (mm['createdAt'] ?? mm['timestamp'] ?? '').toString(),
+                  ) ??
+                  DateTime.now(),
+            );
+          })
+          .toList();
 
       final chat = Chat(
         id: data['id']?.toString() ?? chatId,
         title: data['title']?.toString() ?? 'Conversación',
         createdAt:
-            DateTime.tryParse(data['createdAt']?.toString() ?? '') ?? DateTime.now(),
+            DateTime.tryParse(data['createdAt']?.toString() ?? '') ??
+            DateTime.now(),
         updatedAt:
-            DateTime.tryParse(data['updatedAt']?.toString() ?? '') ?? DateTime.now(),
+            DateTime.tryParse(data['updatedAt']?.toString() ?? '') ??
+            DateTime.now(),
         model: data['model']?.toString(),
         messages: messagesList,
       );
 
-      AppLogger.chat('✔️ Chat cargado (${messagesList.length} msgs)',
-          tag: 'CHAT_SERVICE');
+      AppLogger.chat(
+        '✔️ Chat cargado (${messagesList.length} msgs)',
+        tag: 'CHAT_SERVICE',
+      );
       return chat;
     } catch (error) {
-      AppLogger.error('✖ Error obteniendo chat', tag: 'CHAT_SERVICE', error: error);
+      AppLogger.error(
+        '✖ Error obteniendo chat',
+        tag: 'CHAT_SERVICE',
+        error: error,
+      );
       rethrow;
     }
   }
 
-  /// Obtener modelos disponibles
-  List<String> getAvailableModels() {
-    return ['ollama', 'gemini', 'openai', 'deepseek'];
+  /// Obtener modelos disponibles desde el backend
+  Future<List<AIModel>> getAvailableModels() async {
+    try {
+      AppLogger.chat('🤖 Obteniendo modelos disponibles', tag: 'CHAT_SERVICE');
+
+      final token = await _auth.getToken();
+      final res = await _dio.get(
+        '/chat/models',
+        options: Options(
+          headers: {if (token != null) 'Authorization': 'Bearer $token'},
+        ),
+      );
+
+      final data = res.data is Map<String, dynamic>
+          ? res.data as Map<String, dynamic>
+          : Map<String, dynamic>.from(res.data);
+
+      final response = AvailableModelsResponse.fromJson(data);
+
+      AppLogger.chat(
+        '✅ Modelos obtenidos: ${response.models.length} modelos disponibles',
+        tag: 'CHAT_SERVICE',
+      );
+
+      return response.models;
+    } catch (error) {
+      AppLogger.error(
+        '❌ Error obteniendo modelos disponibles',
+        tag: 'CHAT_SERVICE',
+        error: error,
+      );
+
+      // Fallback a modelos hardcodeados en caso de error
+      AppLogger.chat('🔄 Usando modelos de fallback', tag: 'CHAT_SERVICE');
+      return _getFallbackModels();
+    }
   }
 
-  /// Generar respuesta mock para pruebas
-  String _generateMockResponse(String userMessage) {
-    final responses = [
-      '¡Hola! Soy tu asistente de IA. ¿En qué puedo ayudarte?',
-      'Entiendo tu pregunta sobre "$userMessage". Déjame explicarte...',
-      'Esa es una excelente pregunta. Basándome en mi conocimiento...',
-      'Para responder a tu consulta, necesito considerar varios aspectos...',
-      'Gracias por tu pregunta. Te puedo ayudar con información sobre "$userMessage".',
+  /// Modelos de fallback en caso de error del backend
+  List<AIModel> _getFallbackModels() {
+    return [
+      const AIModel(
+        id: 'ollama',
+        name: 'Ollama Local',
+        provider: 'Local',
+        available: true,
+        isPremium: false,
+        features: ['text-generation', 'local-processing'],
+        description: 'Modelo local ejecutándose en tu servidor',
+        defaultModel: 'deepseek-r1:7b',
+      ),
+      const AIModel(
+        id: 'gemini',
+        name: 'Gemini 2.0 Flash',
+        provider: 'Google',
+        available: true,
+        isPremium: true,
+        features: ['text-generation', 'multimodal', 'streaming'],
+        description: 'Modelo avanzado de Google con capacidades multimodales',
+        defaultModel: 'gemini-2.0-flash-exp',
+      ),
+      const AIModel(
+        id: 'openai',
+        name: 'GPT-4o Mini',
+        provider: 'OpenAI',
+        available: true,
+        isPremium: true,
+        features: ['text-generation', 'streaming', 'chat-completions'],
+        description: 'Modelo de OpenAI optimizado para chat y conversaciones',
+        defaultModel: 'gpt-4o-mini',
+      ),
+      const AIModel(
+        id: 'deepseek',
+        name: 'DeepSeek Chat',
+        provider: 'DeepSeek',
+        available: true,
+        isPremium: true,
+        features: ['text-generation', 'cost-effective', 'high-performance'],
+        description: 'Modelo de DeepSeek con excelente relación precio-calidad',
+        defaultModel: 'deepseek-chat',
+      ),
     ];
-
-    return responses[DateTime.now().millisecond % responses.length];
   }
 }
 
