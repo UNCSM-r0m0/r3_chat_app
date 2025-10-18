@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'markdown_extensions.dart';
 import '../models/chat_message.dart';
 
 /// Widget para mostrar un mensaje en el chat
@@ -140,7 +141,14 @@ class MessageBubble extends StatelessWidget {
       }
 
       return MarkdownBody(
-        data: message.content,
+        data: preprocessMarkdownForMath(message.content),
+        inlineSyntaxes: [
+          MathInlineSyntax(),
+        ],
+        builders: {
+          'pre': PreCodeBlockBuilder(),
+          'math-inline': MathInlineBuilder(),
+        },
         styleSheet: MarkdownStyleSheet(
           p: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4),
           code: const TextStyle(

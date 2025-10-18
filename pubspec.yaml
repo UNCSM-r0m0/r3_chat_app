@@ -51,6 +51,8 @@ dependencies:
 
   # UI y UX
   flutter_markdown: ^0.6.18 # Renderizar Markdown
+  flutter_highlight: ^0.7.0 # Resaltado de sintaxis en bloques de código
+  flutter_math_fork: ^0.7.2 # Render LaTeX/MathJax para respuestas matemáticas
   feather_icons: ^1.1.0 # Iconos consistentes con frontend
   flutter_screenutil: ^5.9.0 # Responsive design
 
