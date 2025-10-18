@@ -22,7 +22,26 @@ class _ChatInputState extends ConsumerState<ChatInput> {
     super.initState();
     // Escuchar cambios para habilitar/deshabilitar el botón enviar y refrescar UI
     _controller.addListener(() {
-      if (mounted) setState(() {});
+      if (mounted) {
+        setState(() {
+          // Ocultar el selector de modelo cuando el usuario empiece a escribir
+          if (_controller.text.isNotEmpty && _showModelSelector) {
+            _showModelSelector = false;
+          }
+        });
+      }
+    });
+
+    // Escuchar cambios en el foco para ocultar el selector cuando el teclado esté activo
+    _focusNode.addListener(() {
+      if (mounted) {
+        setState(() {
+          // Si el campo pierde el foco, ocultar el selector
+          if (!_focusNode.hasFocus) {
+            _showModelSelector = false;
+          }
+        });
+      }
     });
   }
 
@@ -40,6 +59,10 @@ class _ChatInputState extends ConsumerState<ChatInput> {
 
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final effectiveInset = bottomInset.clamp(0.0, 24.0).toDouble();
+    final isKeyboardVisible = bottomInset > 0;
+
+    // Ocultar el selector de modelo cuando el teclado esté visible
+    final shouldShowModelSelector = _showModelSelector && !isKeyboardVisible;
 
     return SafeArea(
       top: false,
@@ -61,11 +84,17 @@ class _ChatInputState extends ConsumerState<ChatInput> {
           ),
           child: Column(
             children: [
-              // Selector de modelo
-              if (_showModelSelector) ...[
-                const ModelSelector(),
-                const SizedBox(height: 12),
-              ],
+              // Selector de modelo con animación
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                height: shouldShowModelSelector ? null : 0,
+                child: shouldShowModelSelector
+                    ? Column(
+                        children: const [ModelSelector(), SizedBox(height: 12)],
+                      )
+                    : const SizedBox.shrink(),
+              ),
 
               // Input principal
               Container(
@@ -141,9 +170,13 @@ class _ChatInputState extends ConsumerState<ChatInput> {
     final selectedModel =
         chatState.selectedModel ?? (isPro ? 'deepseek' : 'ollama');
 
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final isKeyboardVisible = bottomInset > 0;
+
     return GestureDetector(
       onTap: () {
-        if (!isPro) return; // Solo Pro puede cambiar modelo
+        if (!isPro || isKeyboardVisible)
+          return; // Solo Pro puede cambiar modelo y no cuando el teclado está visible
         setState(() {
           _showModelSelector = !_showModelSelector;
         });
@@ -151,10 +184,18 @@ class _ChatInputState extends ConsumerState<ChatInput> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: const Color(0xFF4B5563), // gray-600
+          color: isKeyboardVisible
+              ? const Color(
+                  0xFF374151,
+                ) // gray-700 cuando el teclado está visible
+              : const Color(0xFF4B5563), // gray-600
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: const Color(0xFF6B7280), // gray-500
+            color: isKeyboardVisible
+                ? const Color(
+                    0xFF4B5563,
+                  ) // gray-600 cuando el teclado está visible
+                : const Color(0xFF6B7280), // gray-500
             width: 1,
           ),
         ),
@@ -172,16 +213,18 @@ class _ChatInputState extends ConsumerState<ChatInput> {
             const SizedBox(width: 6),
             Text(
               selectedModel,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: isKeyboardVisible ? Colors.white70 : Colors.white,
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(width: 4),
             Icon(
-              isPro ? Icons.keyboard_arrow_down : Icons.lock_outline,
-              color: Colors.white,
+              isKeyboardVisible
+                  ? Icons.keyboard_hide
+                  : (isPro ? Icons.keyboard_arrow_down : Icons.lock_outline),
+              color: isKeyboardVisible ? Colors.white70 : Colors.white,
               size: 16,
             ),
           ],

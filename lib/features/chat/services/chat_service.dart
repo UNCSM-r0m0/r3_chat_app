@@ -67,7 +67,17 @@ class ChatService {
       );
 
       AppLogger.chat('📥 Respuesta recibida del backend', tag: 'CHAT_SERVICE');
-      final remaining = (res.data as Map)['remaining']; final limit = (res.data as Map)['limit']; final tier = (res.data as Map)['tier']?.toString(); return ChatResponse(message: assistant, remaining: (remaining is int) ? remaining : int.tryParse(remaining?.toString() ?? ''), limit: (limit is int) ? limit : int.tryParse(limit?.toString() ?? ''), tier: tier);
+      final remaining = (res.data as Map)['remaining'];
+      final limit = (res.data as Map)['limit'];
+      final tier = (res.data as Map)['tier']?.toString();
+      return ChatResponse(
+        message: assistant,
+        remaining: (remaining is int)
+            ? remaining
+            : int.tryParse(remaining?.toString() ?? ''),
+        limit: (limit is int) ? limit : int.tryParse(limit?.toString() ?? ''),
+        tier: tier,
+      );
     } catch (error) {
       AppLogger.error(
         '❌ Error enviando mensaje',
@@ -172,7 +182,7 @@ class ChatService {
       AppLogger.chat('🗑️ Eliminando chat: $chatId', tag: 'CHAT_SERVICE');
       final token = await _auth.getToken();
       await _dio.delete(
-        '/chat/$chatId',
+        '/chat/sessions/$chatId',
         options: Options(
           headers: {if (token != null) 'Authorization': 'Bearer $token'},
         ),
