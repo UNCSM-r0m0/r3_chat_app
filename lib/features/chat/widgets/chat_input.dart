@@ -38,10 +38,12 @@ class _ChatInputState extends ConsumerState<ChatInput> {
     final chatState = ref.watch(chatStateProvider);
     final isLoading = chatState.isLoading;
 
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;\n    final effectiveInset = bottomInset.clamp(0.0, 24.0).toDouble();
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final effectiveInset = bottomInset.clamp(0.0, 24.0).toDouble();
 
     return SafeArea(
-      top: false, bottom: false,
+      top: false,
+      bottom: false,
       child: AnimatedPadding(
         duration: const Duration(milliseconds: 150),
         curve: Curves.easeOut,
@@ -136,7 +138,8 @@ class _ChatInputState extends ConsumerState<ChatInput> {
   Widget _buildModelButton() {
     final chatState = ref.watch(chatStateProvider);
     final isPro = ref.watch(authStateProvider).isPro;
-    final selectedModel = chatState.selectedModel ?? (isPro ? 'deepseek' : 'ollama');
+    final selectedModel =
+        chatState.selectedModel ?? (isPro ? 'deepseek' : 'ollama');
 
     return GestureDetector(
       onTap: () {
@@ -272,5 +275,3 @@ class _ChatInputState extends ConsumerState<ChatInput> {
     _focusNode.requestFocus();
   }
 }
-
-
