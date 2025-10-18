@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/chat_message.dart';
 import '../services/chat_service.dart';
+import '../../auth/providers/auth_providers.dart';
 
 /// Provider para el servicio de chat
 final chatServiceProvider = Provider<ChatService>((ref) {
@@ -9,7 +10,7 @@ final chatServiceProvider = Provider<ChatService>((ref) {
 
 /// Provider para el estado del chat actual
 final chatStateProvider = StateNotifierProvider<ChatNotifier, ChatState>((ref) {
-  return ChatNotifier(ref.read(chatServiceProvider));
+  return ChatNotifier(ref.read(chatServiceProvider), ref);
 });
 
 /// Provider para la lista de chats
@@ -22,8 +23,9 @@ final chatListProvider = StateNotifierProvider<ChatListNotifier, List<Chat>>((
 /// Notifier para manejar el estado del chat
 class ChatNotifier extends StateNotifier<ChatState> {
   final ChatService _chatService;
+  final Ref _ref;
 
-  ChatNotifier(this._chatService) : super(const ChatState());
+  ChatNotifier(this._chatService, this._ref) : super(const ChatState());
 
   /// Enviar mensaje
   Future<void> sendMessage(String message, String model) async {
@@ -52,10 +54,20 @@ class ChatNotifier extends StateNotifier<ChatState> {
       );
 
       // Agregar respuesta
+      final assistant = response.message;
       state = state.copyWith(
-        messages: [...state.messages, response],
+        messages: [...state.messages, assistant],
         isLoading: false,
       );
+
+      // Actualizar uso y plan si vienen en la respuesta
+      if (response.limit != null && response.remaining != null) {
+        final used = (response.limit! - response.remaining!).clamp(0, response.limit!);
+        _ref.read(authStateProvider.notifier).updateUsage(used: used, limit: response.limit!);
+      }
+      if (response.tier != null) {
+        _ref.read(authStateProvider.notifier).setIsPro(response.tier!.toUpperCase() == 'PREMIUM');
+      }
     } catch (error) {
       state = state.copyWith(isLoading: false, error: error.toString());
     }

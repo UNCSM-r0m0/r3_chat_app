@@ -52,6 +52,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(isPro: true);
   }
 
+  void setIsPro(bool value) {
+    state = state.copyWith(isPro: value);
+  }
+
   void updateUsage({required int used, required int limit}) {
     state = state.copyWith(standardUsed: used, standardLimit: limit);
   }

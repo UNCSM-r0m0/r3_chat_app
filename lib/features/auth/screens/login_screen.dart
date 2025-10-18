@@ -314,10 +314,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (result.success && result.user != null) {
         AppLogger.success('🎉 Autenticación exitosa con Google', tag: 'LOGIN');
 
-        // actualizar auth state (free por defecto)
-        ref
-            .read(authStateProvider.notifier)
-            .setUser(result.user!, isPro: false);
+        // Consultar suscripción real y actualizar estado
+        final isPro = await _authService.fetchIsPro();
+        ref.read(authStateProvider.notifier).setUser(result.user!, isPro: isPro);
 
         // Mostrar mensaje y navegar al chat
         messenger.showSnackBar(
@@ -388,10 +387,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (result.success && result.user != null) {
         AppLogger.success('🎉 Autenticación exitosa con GitHub', tag: 'LOGIN');
 
-        // actualizar auth state (free por defecto)
-        ref
-            .read(authStateProvider.notifier)
-            .setUser(result.user!, isPro: false);
+        // Consultar suscripción real y actualizar estado
+        final isPro = await _authService.fetchIsPro();
+        ref.read(authStateProvider.notifier).setUser(result.user!, isPro: isPro);
 
         messenger.showSnackBar(
           SnackBar(

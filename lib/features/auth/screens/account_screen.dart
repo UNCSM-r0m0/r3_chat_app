@@ -27,7 +27,7 @@ class AccountScreen extends ConsumerWidget {
 
             final leftColumn = Column(
               children: [
-                _UserCard(userName: user?.name ?? 'Usuario', email: user?.email ?? ''),
+                _UserCard(userName: user?.name ?? 'Usuario', email: user?.email ?? '', isPro: auth.isPro),
                 const SizedBox(height: 12),
                 _UsageCard(
                   used: auth.standardUsed,
@@ -92,7 +92,8 @@ class AccountScreen extends ConsumerWidget {
 class _UserCard extends StatelessWidget {
   final String userName;
   final String email;
-  const _UserCard({required this.userName, required this.email});
+  final bool isPro;
+  const _UserCard({required this.userName, required this.email, this.isPro = false});
 
   @override
   Widget build(BuildContext context) {
@@ -130,11 +131,11 @@ class _UserCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF374151),
+                    color: isPro ? const Color(0xFF7C3AED) : const Color(0xFF374151),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFF4B5563)),
+                    border: Border.all(color: isPro ? const Color(0xFF8B5CF6) : const Color(0xFF4B5563)),
                   ),
-                  child: const Text('Free Plan', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  child: Text(isPro ? 'Pro Plan' : 'Free Plan', style: const TextStyle(color: Colors.white70, fontSize: 12)),
                 ),
               ],
             ),
@@ -268,9 +269,12 @@ class _UpgradeCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final narrow = constraints.maxWidth < 360;
+
+              final upgradeBtn = SizedBox(
+                width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: isPro ? null : onUpgrade,
                   icon: const Icon(Icons.upgrade),
@@ -278,11 +282,12 @@ class _UpgradeCard extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF8B5CF6),
                     foregroundColor: Colors.white,
+                    minimumSize: const Size(0, 44),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              OutlinedButton(
+              );
+
+              final invoicesBtn = OutlinedButton(
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('No invoices in demo')),
@@ -291,10 +296,30 @@ class _UpgradeCard extends StatelessWidget {
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Color(0xFF374151)),
                   foregroundColor: Colors.white,
+                  minimumSize: const Size(0, 44),
                 ),
                 child: const Text('View Previous Invoices'),
-              )
-            ],
+              );
+
+              if (narrow) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    upgradeBtn,
+                    const SizedBox(height: 8),
+                    SizedBox(width: double.infinity, child: invoicesBtn),
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Expanded(child: upgradeBtn),
+                  const SizedBox(width: 12),
+                  invoicesBtn,
+                ],
+              );
+            },
           ),
           const SizedBox(height: 8),
           const Text(

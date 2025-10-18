@@ -24,7 +24,7 @@ class ChatService {
   }
 
   /// Enviar mensaje al chat
-  Future<ChatMessage> sendMessage({
+  Future<ChatResponse> sendMessage({
     required String message,
     required String model,
     List<ChatMessage>? conversationHistory,
@@ -67,7 +67,7 @@ class ChatService {
       );
 
       AppLogger.chat('📥 Respuesta recibida del backend', tag: 'CHAT_SERVICE');
-      return assistant;
+      final remaining = (res.data as Map)['remaining']; final limit = (res.data as Map)['limit']; final tier = (res.data as Map)['tier']?.toString(); return ChatResponse(message: assistant, remaining: (remaining is int) ? remaining : int.tryParse(remaining?.toString() ?? ''), limit: (limit is int) ? limit : int.tryParse(limit?.toString() ?? ''), tier: tier);
     } catch (error) {
       AppLogger.error(
         '❌ Error enviando mensaje',
@@ -205,4 +205,13 @@ class ChatService {
 
     return responses[DateTime.now().millisecond % responses.length];
   }
+}
+
+class ChatResponse {
+  final ChatMessage message;
+  final int? remaining;
+  final int? limit;
+  final String? tier;
+
+  ChatResponse({required this.message, this.remaining, this.limit, this.tier});
 }

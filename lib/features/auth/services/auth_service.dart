@@ -224,6 +224,40 @@ class AuthService {
   Future<String?> getToken() async {
     return _storage.read(key: _tokenKey);
   }
+
+  /// Consultar suscripción del usuario para saber si es PRO
+  Future<bool> fetchIsPro() async {
+    try {
+      final token = await getToken();
+      if (token == null) return false;
+
+      final dio = Dio();
+      final res = await dio.get(
+        '$_backendUrl/api/stripe/subscription',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+          },
+        ),
+      );
+
+      if (res.statusCode == 200) {
+        final data = res.data is Map<String, dynamic>
+            ? res.data as Map<String, dynamic>
+            : Map<String, dynamic>.from(res.data);
+        final tier = data['tier']?.toString().toUpperCase();
+        final status = data['status']?.toString().toUpperCase();
+        return tier == 'PREMIUM' && status == 'ACTIVE';
+      }
+
+      return false;
+    } catch (error) {
+      AppLogger.error('Error fetching subscription', tag: 'AUTH_SERVICE', error: error);
+      return false;
+    }
+  }
 }
 
 /// Resultado de autenticación
