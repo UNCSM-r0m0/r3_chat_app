@@ -31,8 +31,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       backgroundColor: const Color(0xFF111827), // gray-900
       appBar: _buildAppBar(),
       drawer: const DrawerMenu(),
-      // Manejamos nosotros el padding por teclado en ChatInput
-      resizeToAvoidBottomInset: true,\n      body: Column(\n        children: const [\n          Expanded(child: ChatArea()),\n          SizedBox(height: 4),\n          ChatInput(),\n        ],\n      ),
+      // Deja que el teclado ajuste el body y el input quede abajo
+      resizeToAvoidBottomInset: true,
+      body: Column(
+        children: const [
+          Expanded(child: ChatArea()),
+          SizedBox(height: 4),
+          ChatInput(),
+        ],
+      ),
 
       // Mostrar error si existe
       floatingActionButton: chatState.error != null
