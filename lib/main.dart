@@ -29,10 +29,10 @@ class R3ChatApp extends StatelessWidget {
       splitScreenMode: true,
       builder: (context, child) {
         return MaterialApp(
-          title: 'R3 Chat',
+          title: 'R3.Chat',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.darkTheme,
-          home: const LoginScreen(),
+          home: const SplashScreen(),
         );
       },
     );
