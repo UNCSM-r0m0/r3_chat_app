@@ -198,6 +198,65 @@ class ChatService {
     }
   }
 
+  /// Obtener un chat específico con sus mensajes
+  Future<Chat> getChat(String chatId) async {
+    try {
+      AppLogger.chat('↗️ Solicitando chat $chatId', tag: 'CHAT_SERVICE');
+      final token = await _auth.getToken();
+      final res = await _dio.get(
+        '/chat/$chatId',
+        options: Options(
+          headers: {if (token != null) 'Authorization': 'Bearer $token'},
+        ),
+      );
+
+      final map = res.data is Map<String, dynamic>
+          ? res.data as Map<String, dynamic>
+          : Map<String, dynamic>.from(res.data);
+
+      final data = (map['data'] ?? map['chat']) as Map<String, dynamic>;
+
+      final messagesList = (data['messages'] as List<dynamic>? ?? [])
+          .map<ChatMessage>((m) {
+        final mm = m is Map<String, dynamic> ? m : Map<String, dynamic>.from(m);
+        final roleStr = (mm['role'] ?? mm['sender'] ?? 'assistant').toString();
+        final role = roleStr.toLowerCase() == 'user'
+            ? ChatRole.user
+            : roleStr.toLowerCase() == 'system'
+                ? ChatRole.system
+                : ChatRole.assistant;
+        return ChatMessage(
+          id: (mm['id'] ?? mm['messageId'] ??
+                  DateTime.now().millisecondsSinceEpoch.toString())
+              .toString(),
+          role: role,
+          content: (mm['content'] ?? mm['text'] ?? '').toString(),
+          timestamp: DateTime.tryParse((mm['createdAt'] ?? mm['timestamp'] ?? '')
+                  .toString()) ??
+              DateTime.now(),
+        );
+      }).toList();
+
+      final chat = Chat(
+        id: data['id']?.toString() ?? chatId,
+        title: data['title']?.toString() ?? 'Conversación',
+        createdAt:
+            DateTime.tryParse(data['createdAt']?.toString() ?? '') ?? DateTime.now(),
+        updatedAt:
+            DateTime.tryParse(data['updatedAt']?.toString() ?? '') ?? DateTime.now(),
+        model: data['model']?.toString(),
+        messages: messagesList,
+      );
+
+      AppLogger.chat('✔️ Chat cargado (${messagesList.length} msgs)',
+          tag: 'CHAT_SERVICE');
+      return chat;
+    } catch (error) {
+      AppLogger.error('✖ Error obteniendo chat', tag: 'CHAT_SERVICE', error: error);
+      rethrow;
+    }
+  }
+
   /// Obtener modelos disponibles
   List<String> getAvailableModels() {
     return ['ollama', 'gemini', 'openai', 'deepseek'];

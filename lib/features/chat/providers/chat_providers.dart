@@ -27,6 +27,23 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   ChatNotifier(this._chatService, this._ref) : super(const ChatState());
 
+  /// Cargar una conversación por id y establecerla como actual
+  Future<void> loadChat(String chatId) async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+      final chat = await _chatService.getChat(chatId);
+      state = state.copyWith(
+        messages: chat.messages,
+        isLoading: false,
+        currentChatId: chat.id,
+        selectedModel: chat.model ?? state.selectedModel,
+        error: null,
+      );
+    } catch (error) {
+      state = state.copyWith(isLoading: false, error: error.toString());
+    }
+  }
+
   /// Enviar mensaje
   Future<void> sendMessage(String message, String model) async {
     if (message.trim().isEmpty) return;

@@ -141,9 +141,9 @@ class _DrawerMenuState extends ConsumerState<DrawerMenu> {
                         fontSize: 12,
                       ),
                     ),
-                    onTap: () {
-                      // En esta versión simple solo cerramos el drawer
-                      Navigator.pop(context);
+                    onTap: () async {
+                      await ref.read(chatStateProvider.notifier).loadChat(chat.id);
+                      if (mounted) Navigator.pop(context);
                     },
                     trailing: IconButton(
                       icon: const Icon(
