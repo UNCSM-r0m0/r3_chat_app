@@ -144,8 +144,8 @@ class _ChatInputState extends ConsumerState<ChatInput> {
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                       child: Row(
                         children: [
-                          // Botón de modelo
-                          _buildModelButton(),
+                          // Botón de modelo (flexible para evitar overflow)
+                          Flexible(child: _buildModelButton()),
                           const SizedBox(width: 8),
 
                           // Botón de adjuntar
@@ -220,9 +220,9 @@ class _ChatInputState extends ConsumerState<ChatInput> {
               ),
             ),
             const SizedBox(width: 6),
-            Flexible(
+            Expanded(
               child: Text(
-                selectedModel,
+                _getShortModelName(selectedModel),
                 style: TextStyle(
                   color: isKeyboardVisible ? Colors.white70 : Colors.white,
                   fontSize: 12,
@@ -315,6 +315,29 @@ class _ChatInputState extends ConsumerState<ChatInput> {
             : const Icon(Icons.send, color: Colors.white, size: 20),
       ),
     );
+  }
+
+  /// Obtener nombre corto del modelo para mostrar en el botón
+  String _getShortModelName(String modelId) {
+    // Mapeo de nombres cortos para modelos conocidos
+    switch (modelId) {
+      case 'ollama-qwen2.5-coder:7b':
+        return 'Qwen2.5 Coder';
+      case 'ollama-deepseek-r1:7b':
+        return 'DeepSeek R1';
+      case 'gemini':
+        return 'Gemini 2.0';
+      case 'openai':
+        return 'GPT-4o Mini';
+      case 'deepseek':
+        return 'DeepSeek Chat';
+      default:
+        // Para modelos desconocidos, truncar inteligentemente
+        if (modelId.startsWith('ollama-')) {
+          return modelId.replaceFirst('ollama-', '').split(':')[0];
+        }
+        return modelId.length > 15 ? '${modelId.substring(0, 12)}...' : modelId;
+    }
   }
 
   /// Enviar mensaje
