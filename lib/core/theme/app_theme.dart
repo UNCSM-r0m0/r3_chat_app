@@ -221,7 +221,7 @@ class AppTheme {
         backgroundColor: AppColors.surface,
         contentTextStyle: const TextStyle(color: AppColors.textPrimary),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        behavior: SnackBarBehavior.floating,
+        behavior: SnackBarBehavior.fixed,
       ),
 
       // Dialog

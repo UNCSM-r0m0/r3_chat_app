@@ -38,14 +38,14 @@ class _ChatInputState extends ConsumerState<ChatInput> {
     final chatState = ref.watch(chatStateProvider);
     final isLoading = chatState.isLoading;
 
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;\n    final effectiveInset = bottomInset.clamp(0.0, 24.0).toDouble();
 
     return SafeArea(
       top: false, bottom: false,
       child: AnimatedPadding(
         duration: const Duration(milliseconds: 150),
         curve: Curves.easeOut,
-        padding: EdgeInsets.only(bottom: bottomInset),
+        padding: EdgeInsets.only(bottom: effectiveInset),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: const BoxDecoration(
@@ -272,4 +272,5 @@ class _ChatInputState extends ConsumerState<ChatInput> {
     _focusNode.requestFocus();
   }
 }
+
 
