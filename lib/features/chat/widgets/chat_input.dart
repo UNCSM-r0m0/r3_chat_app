@@ -91,7 +91,16 @@ class _ChatInputState extends ConsumerState<ChatInput> {
                 height: shouldShowModelSelector ? null : 0,
                 child: shouldShowModelSelector
                     ? Column(
-                        children: const [ModelSelector(), SizedBox(height: 12)],
+                        children: [
+                          ModelSelector(
+                            onSelected: () {
+                              if (mounted) {
+                                setState(() => _showModelSelector = false);
+                              }
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                        ],
                       )
                     : const SizedBox.shrink(),
               ),
