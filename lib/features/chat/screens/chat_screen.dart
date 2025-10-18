@@ -32,9 +32,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       appBar: _buildAppBar(),
       drawer: const DrawerMenu(),
       // Manejamos nosotros el padding por teclado en ChatInput
-      resizeToAvoidBottomInset: false,
-      body: const ChatArea(),
-      bottomNavigationBar: const ChatInput(),
+      resizeToAvoidBottomInset: true,\n      body: Column(\n        children: const [\n          Expanded(child: ChatArea()),\n          SizedBox(height: 4),\n          ChatInput(),\n        ],\n      ),
 
       // Mostrar error si existe
       floatingActionButton: chatState.error != null
@@ -212,6 +210,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 }
+
 
 
 
