@@ -13,7 +13,9 @@ class AppConfig {
   }
 
   /// Configuración de timeout para operaciones de red
-  static const Duration networkTimeout = Duration(seconds: 30);
+  static const Duration networkTimeout = Duration(
+    seconds: 120,
+  ); // 2 minutos para modelos lentos
 
   /// Configuración de reintentos para operaciones fallidas
   static const int maxRetries = 3;

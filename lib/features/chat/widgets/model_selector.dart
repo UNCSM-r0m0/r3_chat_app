@@ -15,10 +15,23 @@ class ModelSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final chatState = ref.watch(chatStateProvider);
-    final isPro = ref.watch(authStateProvider).isPro;
+    final authState = ref.watch(authStateProvider);
+    final isPro = authState.isPro;
     final selectedModel =
         chatState.selectedModel ?? (isPro ? 'deepseek' : 'ollama');
     final modelsAsync = ref.watch(availableModelsProvider);
+
+    // Debug: Log del estado de autenticación
+    print('🔍 ModelSelector - isPro: $isPro, user: ${authState.user?.email}');
+
+    // Forzar actualización de modelos cuando cambie el estado de autenticación
+    ref.listen(authStateProvider, (previous, next) {
+      if (previous?.isPro != next.isPro) {
+        print('🔄 Estado Pro cambió: ${previous?.isPro} -> ${next.isPro}');
+        // Refrescar modelos cuando cambie el estado Pro
+        ref.read(availableModelsStateProvider.notifier).refresh();
+      }
+    });
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -45,16 +58,46 @@ class ModelSelector extends ConsumerWidget {
     bool isPro,
     WidgetRef ref,
   ) {
+    // Debug: Log de modelos y filtrado
+    print('🔍 Modelos totales: ${models.length}');
+    print('🔍 isPro: $isPro');
+    for (final model in models) {
+      print(
+        '🔍 Modelo: ${model.name} - isPremium: ${model.isPremium} - available: ${model.available}',
+      );
+    }
+
     // Filtrar modelos según el tier del usuario
     final availableModels = models
         .where((model) => !model.isPremium || isPro)
         .toList();
 
+    print('🔍 Modelos filtrados: ${availableModels.length}');
+
     if (availableModels.isEmpty) {
-      return const Center(
-        child: Text(
-          'No hay modelos disponibles',
-          style: TextStyle(color: Colors.white70),
+      return Center(
+        child: Column(
+          children: [
+            const Text(
+              'No hay modelos disponibles',
+              style: TextStyle(color: Colors.white70),
+            ),
+            const SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: () {
+                print('🔄 Forzando actualización de estado Pro...');
+                // Forzar actualización del estado Pro
+                ref.read(authStateProvider.notifier).setIsPro(true);
+                // Refrescar modelos
+                ref.read(availableModelsStateProvider.notifier).refresh();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue.withOpacity(0.1),
+                foregroundColor: Colors.blue,
+              ),
+              child: const Text('Debug: Forzar Pro'),
+            ),
+          ],
         ),
       );
     }
@@ -176,92 +219,6 @@ class ModelSelector extends ConsumerWidget {
               ),
               child: const Text('Reintentar'),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Construir opción de modelo individual
-  Widget _buildModelOption(AIModel model, String selectedModel, WidgetRef ref) {
-    final isSelected = selectedModel == model.id;
-    final isUnavailable = !model.available;
-
-    return GestureDetector(
-      onTap: isUnavailable
-          ? null
-          : () {
-              ref.read(chatStateProvider.notifier).selectModel(model.id);
-            },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isUnavailable
-              ? const Color(0xFF2D3748) // gray-800 cuando no está disponible
-              : isSelected
-              ? _getModelColor(model.id).withOpacity(0.2)
-              : const Color(0xFF4B5563), // gray-600
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isUnavailable
-                ? const Color(0xFF4A5568) // gray-700 cuando no está disponible
-                : isSelected
-                ? _getModelColor(model.id)
-                : const Color(0xFF6B7280), // gray-500
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: isUnavailable ? Colors.grey : _getModelColor(model.id),
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  model.name,
-                  style: TextStyle(
-                    color: isUnavailable
-                        ? Colors.white54
-                        : isSelected
-                        ? _getModelColor(model.id)
-                        : Colors.white,
-                    fontSize: 12,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  ),
-                ),
-                if (model.isPremium) ...[
-                  const SizedBox(height: 2),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.star, color: Colors.amber, size: 10),
-                      const SizedBox(width: 2),
-                      Text(
-                        'Premium',
-                        style: TextStyle(
-                          color: isUnavailable ? Colors.white38 : Colors.amber,
-                          fontSize: 10,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ],
-            ),
-            if (isUnavailable) ...[
-              const SizedBox(width: 4),
-              const Icon(Icons.block, color: Colors.red, size: 12),
-            ],
           ],
         ),
       ),

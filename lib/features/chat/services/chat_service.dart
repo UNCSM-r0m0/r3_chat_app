@@ -16,8 +16,10 @@ class ChatService {
 
   ChatService() {
     _dio.options.baseUrl = _baseUrl;
-    _dio.options.connectTimeout = const Duration(seconds: 30);
-    _dio.options.receiveTimeout = const Duration(seconds: 30);
+    _dio.options.connectTimeout = const Duration(seconds: 60);
+    _dio.options.receiveTimeout = const Duration(
+      seconds: 120,
+    ); // 2 minutos para modelos lentos
     _dio.options.headers = {
       'Content-Type': 'application/json',
       'ngrok-skip-browser-warning': 'true',
@@ -281,10 +283,8 @@ class ChatService {
 
       final token = await _auth.getToken();
       final res = await _dio.get(
-        '/chat/models',
-        options: Options(
-          headers: {if (token != null) 'Authorization': 'Bearer $token'},
-        ),
+        '/models/public',
+        options: Options(headers: {'ngrok-skip-browser-warning': 'true'}),
       );
 
       final data = res.data is Map<String, dynamic>

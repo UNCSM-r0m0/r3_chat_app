@@ -220,12 +220,16 @@ class _ChatInputState extends ConsumerState<ChatInput> {
               ),
             ),
             const SizedBox(width: 6),
-            Text(
-              selectedModel,
-              style: TextStyle(
-                color: isKeyboardVisible ? Colors.white70 : Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
+            Flexible(
+              child: Text(
+                selectedModel,
+                style: TextStyle(
+                  color: isKeyboardVisible ? Colors.white70 : Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
             ),
             const SizedBox(width: 4),
