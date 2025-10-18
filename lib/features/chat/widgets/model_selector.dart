@@ -31,11 +31,9 @@ class ModelSelector extends ConsumerWidget {
         ),
       ),
       child: modelsAsync.when(
-        data: (models) =>
-            _buildModelsList(models, selectedModel, isPro, ref),
+        data: (models) => _buildModelsList(models, selectedModel, isPro, ref),
         loading: () => _buildLoadingState(),
-        error: (error, stackTrace) =>
-            _buildErrorState(error, stackTrace, ref),
+        error: (error, stackTrace) => _buildErrorState(error, stackTrace, ref),
       ),
     );
   }
@@ -84,7 +82,10 @@ class ModelSelector extends ConsumerWidget {
 
   /// Versión minimalista de la opción de modelo
   Widget _buildModelOptionMinimal(
-      AIModel model, String selectedModel, WidgetRef ref) {
+    AIModel model,
+    String selectedModel,
+    WidgetRef ref,
+  ) {
     final isSelected = selectedModel == model.id;
     final isUnavailable = !model.available;
 
@@ -101,15 +102,15 @@ class ModelSelector extends ConsumerWidget {
           color: isUnavailable
               ? const Color(0xFF2D3748)
               : isSelected
-                  ? _getModelColor(model.id).withOpacity(0.2)
-                  : const Color(0xFF4B5563),
+              ? _getModelColor(model.id).withOpacity(0.2)
+              : const Color(0xFF4B5563),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isUnavailable
                 ? const Color(0xFF4A5568)
                 : isSelected
-                    ? _getModelColor(model.id)
-                    : const Color(0xFF6B7280),
+                ? _getModelColor(model.id)
+                : const Color(0xFF6B7280),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -131,8 +132,8 @@ class ModelSelector extends ConsumerWidget {
                 color: isUnavailable
                     ? Colors.white54
                     : isSelected
-                        ? _getModelColor(model.id)
-                        : Colors.white,
+                    ? _getModelColor(model.id)
+                    : Colors.white,
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               ),
@@ -267,19 +268,30 @@ class ModelSelector extends ConsumerWidget {
     );
   }
 
-  /// Obtener color del modelo según su ID
+  /// Obtener color del modelo según su ID (dinámico)
   Color _getModelColor(String modelId) {
-    switch (modelId) {
-      case 'ollama':
-        return Colors.green;
-      case 'gemini':
-        return Colors.blue;
-      case 'openai':
-        return Colors.purple;
-      case 'deepseek':
-        return Colors.orange;
-      default:
-        return Colors.grey;
+    // Colores para modelos específicos conocidos
+    if (modelId.startsWith('ollama-')) {
+      // Modelos de Ollama locales - verde
+      return Colors.green;
+    } else if (modelId.contains('gemini')) {
+      // Modelos de Google - azul
+      return Colors.blue;
+    } else if (modelId.contains('gpt') || modelId.contains('openai')) {
+      // Modelos de OpenAI - púrpura
+      return Colors.purple;
+    } else if (modelId.contains('deepseek')) {
+      // Modelos de DeepSeek - naranja
+      return Colors.orange;
+    } else if (modelId.contains('llama')) {
+      // Modelos de Llama - amarillo
+      return Colors.yellow;
+    } else if (modelId.contains('qwen')) {
+      // Modelos de Qwen - cian
+      return Colors.cyan;
+    } else {
+      // Color por defecto para modelos desconocidos
+      return Colors.grey;
     }
   }
 }
