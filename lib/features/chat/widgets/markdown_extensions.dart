@@ -108,6 +108,7 @@ class _CodeBlock extends StatefulWidget {
 
 class _CodeBlockState extends State<_CodeBlock> {
   bool _copied = false;
+  late final ScrollController _hController;
 
   Future<void> _copy() async {
     await Clipboard.setData(ClipboardData(text: widget.code));
@@ -122,6 +123,18 @@ class _CodeBlockState extends State<_CodeBlock> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _hController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _hController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
@@ -129,7 +142,9 @@ class _CodeBlockState extends State<_CodeBlock> {
           borderRadius: BorderRadius.circular(8),
           child: Scrollbar(
             thumbVisibility: true,
+            controller: _hController,
             child: SingleChildScrollView(
+              controller: _hController,
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.all(12),
               child: HighlightView(
