@@ -21,55 +21,68 @@ class AccountScreen extends ConsumerWidget {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth >= 700;
+
+            final leftColumn = Column(
+              children: [
+                _UserCard(userName: user?.name ?? 'Usuario', email: user?.email ?? ''),
+                const SizedBox(height: 12),
+                _UsageCard(
+                  used: auth.standardUsed,
+                  limit: auth.standardLimit,
+                ),
+                const SizedBox(height: 12),
+                const _ShortcutsCard(),
+              ],
+            );
+
+            final rightColumn = Column(
+              children: [
+                _UpgradeCard(isPro: auth.isPro, onUpgrade: () {
+                  ref.read(authStateProvider.notifier).upgradeToPro();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Upgraded to Pro!')),
+                  );
+                }),
+                const SizedBox(height: 12),
+                _BillingPrefsCard(
+                  value: auth.emailReceipts,
+                  onChanged: (v) => ref.read(authStateProvider.notifier).setEmailReceipts(v),
+                ),
+                const SizedBox(height: 12),
+                _DangerZoneCard(onDelete: () {
+                  // Placeholder: in real app, call backend
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Delete account requested')),
+                  );
+                }),
+              ],
+            );
+
+            if (isWide) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: leftColumn),
+                  const SizedBox(width: 12),
+                  const SizedBox(width: 12),
+                  Expanded(flex: 2, child: rightColumn),
+                ],
+              );
+            }
+
+            // Mobile: una sola columna
+            return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    children: [
-                      _UserCard(userName: user?.name ?? 'Usuario', email: user?.email ?? ''),
-                      const SizedBox(height: 12),
-                      _UsageCard(
-                        used: auth.standardUsed,
-                        limit: auth.standardLimit,
-                      ),
-                      const SizedBox(height: 12),
-                      const _ShortcutsCard(),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 2,
-                  child: Column(
-                    children: [
-                      _UpgradeCard(isPro: auth.isPro, onUpgrade: () {
-                        ref.read(authStateProvider.notifier).upgradeToPro();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Upgraded to Pro!')),
-                        );
-                      }),
-                      const SizedBox(height: 12),
-                      _BillingPrefsCard(
-                        value: auth.emailReceipts,
-                        onChanged: (v) => ref.read(authStateProvider.notifier).setEmailReceipts(v),
-                      ),
-                      const SizedBox(height: 12),
-                      _DangerZoneCard(onDelete: () {
-                        // Placeholder: in real app, call backend
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Delete account requested')),
-                        );
-                      }),
-                    ],
-                  ),
-                ),
+                leftColumn,
+                const SizedBox(height: 12),
+                rightColumn,
               ],
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
@@ -153,9 +166,9 @@ class _UsageCard extends StatelessWidget {
           const Text('Message Usage', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('Standard', style: TextStyle(color: Colors.white70)),
-              const Spacer(),
               Text('$used/$limit', style: const TextStyle(color: Colors.white70)),
             ],
           ),
@@ -245,12 +258,12 @@ class _UpgradeCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Row(
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
             children: const [
               _Benefit(icon: Icons.auto_awesome, text: 'Access to All Models'),
-              SizedBox(width: 12),
               _Benefit(icon: Icons.bolt, text: 'Generous Limits'),
-              SizedBox(width: 12),
               _Benefit(icon: Icons.headset_mic, text: 'Priority Support'),
             ],
           ),
@@ -338,7 +351,11 @@ class _BillingPrefsCard extends StatelessWidget {
             child: Text('Billing Preferences', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
           ),
           const SizedBox(width: 12),
-          const Text('Email me receipts', style: TextStyle(color: Colors.white70)),
+          const Flexible(
+            child: Text('Email me receipts',
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: Colors.white70)),
+          ),
           const SizedBox(width: 12),
           Switch(
             value: value,
@@ -369,18 +386,17 @@ class _DangerZoneCard extends StatelessWidget {
         children: [
           const Text('Danger Zone', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              OutlinedButton.icon(
-                onPressed: onDelete,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.redAccent,
-                  side: const BorderSide(color: Colors.redAccent),
-                ),
-                icon: const Icon(Icons.delete_forever),
-                label: const Text('Delete Account'),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              onPressed: onDelete,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.redAccent,
+                side: const BorderSide(color: Colors.redAccent),
               ),
-            ],
+              icon: const Icon(Icons.delete_forever),
+              label: const Text('Delete Account'),
+            ),
           ),
         ],
       ),

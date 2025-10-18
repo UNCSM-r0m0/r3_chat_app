@@ -165,48 +165,67 @@ class _DrawerMenuState extends ConsumerState<DrawerMenu> {
             // Account / Logout
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const AccountScreen(),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.settings, size: 18),
-                      label: const Text('Account'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: const BorderSide(color: Color(0xFF374151)),
-                      ),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isNarrow = constraints.maxWidth < 340;
+                  final accountButton = OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const AccountScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.settings, size: 18),
+                    label: const Text('Account', overflow: TextOverflow.ellipsis),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Color(0xFF374151)),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                      minimumSize: const Size(0, 40),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () async {
-                        await _authService.signOut();
-                        if (!mounted) return;
-                        Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(
-                            builder: (_) => const LoginScreen(),
-                          ),
-                          (route) => false,
-                        );
-                      },
-                      icon: const Icon(Icons.logout, size: 18),
-                      label: const Text('Logout'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: const BorderSide(color: Color(0xFF374151)),
-                      ),
+                  );
+
+                  final logoutButton = OutlinedButton.icon(
+                    onPressed: () async {
+                      await _authService.signOut();
+                      if (!mounted) return;
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(
+                          builder: (_) => const LoginScreen(),
+                        ),
+                        (route) => false,
+                      );
+                    },
+                    icon: const Icon(Icons.logout, size: 18),
+                    label: const Text('Logout'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Color(0xFF374151)),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                      minimumSize: const Size(0, 40),
                     ),
-                  ),
-                ],
+                  );
+
+                  if (isNarrow) {
+                    return Column(
+                      children: [
+                        SizedBox(width: double.infinity, child: accountButton),
+                        const SizedBox(height: 8),
+                        SizedBox(width: double.infinity, child: logoutButton),
+                      ],
+                    );
+                  }
+
+                  return Row(
+                    children: [
+                      Expanded(child: accountButton),
+                      const SizedBox(width: 8),
+                      Expanded(child: logoutButton),
+                    ],
+                  );
+                },
               ),
             ),
           ],
