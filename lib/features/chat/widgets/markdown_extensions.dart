@@ -135,7 +135,7 @@ class _CodeBlockState extends State<_CodeBlock> {
               child: HighlightView(
                 widget.code,
                 language: widget.language, // puede ser null
-                theme: atom_one_dark.theme,
+                theme: atom_one_dark.atomOneDarkTheme,
                 padding: EdgeInsets.zero,
                 textStyle: const TextStyle(
                   fontFamily: 'monospace',
