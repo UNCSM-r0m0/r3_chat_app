@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../providers/auth_providers.dart';
 import '../providers/usage_providers.dart';
-import '../services/usage_service.dart';
 
 class AccountScreen extends ConsumerWidget {
   const AccountScreen({super.key});
@@ -19,16 +18,7 @@ class AccountScreen extends ConsumerWidget {
         backgroundColor: const Color(0xFF1F2937),
         title: const Text('Account', style: TextStyle(color: Colors.white)),
         iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-            onPressed: () {
-              ref.read(usageStatsStateProvider.notifier).refresh();
-            },
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            tooltip: 'Refresh usage stats',
-          ),
-          const SizedBox(width: 8),
-        ],
+        actions: const [SizedBox(width: 8)],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

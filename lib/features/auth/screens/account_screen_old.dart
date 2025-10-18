@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../providers/auth_providers.dart';
 import '../providers/usage_providers.dart';
-import '../services/usage_service.dart';
 
 class AccountScreen extends ConsumerWidget {
   const AccountScreen({super.key});
@@ -19,16 +18,7 @@ class AccountScreen extends ConsumerWidget {
         backgroundColor: const Color(0xFF1F2937),
         title: const Text('Account', style: TextStyle(color: Colors.white)),
         iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-            onPressed: () {
-              ref.read(usageStatsStateProvider.notifier).refresh();
-            },
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            tooltip: 'Refresh usage stats',
-          ),
-          const SizedBox(width: 8),
-        ],
+        actions: const [SizedBox(width: 8)],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -189,25 +179,14 @@ class _UserCard extends StatelessWidget {
   }
 }
 
-class _UsageCard extends ConsumerWidget {
-  const _UsageCard();
+class _UsageCard extends StatelessWidget {
+  final int used;
+  final int limit;
+  const _UsageCard({required this.used, required this.limit});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final usageStatsAsync = ref.watch(usageStatsProvider);
-
-    return usageStatsAsync.when(
-      data: (stats) => _buildUsageContent(stats),
-      loading: () => _buildLoadingContent(),
-      error: (error, stackTrace) => _buildErrorContent(error),
-    );
-  }
-
-  Widget _buildUsageContent(UsageStats stats) {
-    final used = stats.todayMessages;
-    final limit = stats.limits.messagesPerDay;
+  Widget build(BuildContext context) {
     final percent = (limit == 0) ? 0.0 : (used / limit).clamp(0.0, 1.0);
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -247,72 +226,6 @@ class _UsageCard extends ConsumerWidget {
           Text(
             '${(limit - used).clamp(0, limit)} messages remaining',
             style: const TextStyle(color: Colors.white54, fontSize: 12),
-          ),
-          const SizedBox(height: 8),
-          // Información adicional de tokens
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Tokens today: ${stats.todayTokens}',
-                style: const TextStyle(color: Colors.white54, fontSize: 12),
-              ),
-              Text(
-                'Total messages: ${stats.totalMessages}',
-                style: const TextStyle(color: Colors.white54, fontSize: 12),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLoadingContent() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1F2937),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF374151)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Message Usage',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 16),
-          const Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF8B5CF6)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildErrorContent(Object error) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1F2937),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF374151)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Message Usage',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Error loading usage stats: $error',
-            style: const TextStyle(color: Colors.red, fontSize: 12),
           ),
         ],
       ),
