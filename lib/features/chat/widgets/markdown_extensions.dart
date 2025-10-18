@@ -149,7 +149,10 @@ class _CodeBlockState extends State<_CodeBlock> {
               padding: const EdgeInsets.all(12),
               child: HighlightView(
                 widget.code,
-                language: widget.language, // puede ser null
+                // Asegura un lenguaje por defecto para evitar excepciones
+                language: (widget.language == null || widget.language!.trim().isEmpty)
+                    ? 'plaintext'
+                    : widget.language!.trim(),
                 theme: atom_one_dark.atomOneDarkTheme,
                 padding: EdgeInsets.zero,
                 textStyle: const TextStyle(
