@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/chat_providers.dart';
+import '../../auth/providers/auth_providers.dart';
 import '../services/chat_service.dart';
 
 /// Widget para seleccionar modelo de IA
@@ -10,7 +11,8 @@ class ModelSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final chatState = ref.watch(chatStateProvider);
-    final selectedModel = chatState.selectedModel ?? 'deepseek';
+    final isPro = ref.watch(authStateProvider).isPro;
+    final selectedModel = chatState.selectedModel ?? (isPro ? 'deepseek' : 'ollama');
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -47,7 +49,8 @@ class ModelSelector extends ConsumerWidget {
   /// Construir opciones de modelos
   List<Widget> _buildModelOptions(String selectedModel, WidgetRef ref) {
     final chatService = ChatService();
-    final availableModels = chatService.getAvailableModels();
+    final isPro = ref.read(authStateProvider).isPro;
+    final availableModels = isPro ? chatService.getAvailableModels() : ['ollama'];
 
     final modelConfigs = {
       'ollama': _ModelOption(
@@ -97,7 +100,7 @@ class ModelSelector extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: isSelected
-                ? model.color.withValues(alpha: 0.2)
+                ? model.color.withOpacity(0.2)
                 : const Color(0xFF4B5563), // gray-600
             borderRadius: BorderRadius.circular(8),
             border: Border.all(

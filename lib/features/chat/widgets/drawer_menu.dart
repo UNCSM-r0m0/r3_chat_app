@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/chat_providers.dart';
 import '../../auth/services/auth_service.dart';
 import '../../auth/screens/login_screen.dart';
+import '../../auth/screens/account_screen.dart';
 
 class DrawerMenu extends ConsumerStatefulWidget {
   const DrawerMenu({super.key});
@@ -169,8 +170,12 @@ class _DrawerMenuState extends ConsumerState<DrawerMenu> {
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () {
-                        // En el futuro: navegar a pantalla de cuenta
                         Navigator.pop(context);
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const AccountScreen(),
+                          ),
+                        );
                       },
                       icon: const Icon(Icons.settings, size: 18),
                       label: const Text('Account'),

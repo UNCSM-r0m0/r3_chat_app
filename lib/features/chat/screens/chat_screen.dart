@@ -31,7 +31,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       backgroundColor: const Color(0xFF111827), // gray-900
       appBar: _buildAppBar(),
       drawer: const DrawerMenu(),
-      resizeToAvoidBottomInset: true,
+      // Manejamos nosotros el padding por teclado en ChatInput
+      resizeToAvoidBottomInset: false,
       body: Column(
         children: [
           // Área de chat

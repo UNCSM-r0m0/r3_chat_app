@@ -50,7 +50,7 @@ class MessageBubble extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
+                    color: Colors.black.withOpacity(0.1),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -125,19 +125,16 @@ class MessageBubble extends StatelessWidget {
       final mermaidMatch = RegExp(r'```mermaid\s+([\s\S]*?)```', multiLine: true).firstMatch(message.content);
       if (mermaidMatch != null) {
         final diagram = mermaidMatch.group(1) ?? '';
+        final controller = WebViewController()
+          ..setJavaScriptMode(JavaScriptMode.unrestricted)
+          ..setBackgroundColor(const Color(0xFF1F2937))
+          ..loadHtmlString(_mermaidHtml(diagram));
+
         return SizedBox(
           height: 220,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: WebView(
-              javascriptMode: JavascriptMode.unrestricted,
-              backgroundColor: const Color(0xFF1F2937),
-              initialUrl: Uri.dataFromString(
-                _mermaidHtml(diagram),
-                mimeType: 'text/html',
-                encoding: const Utf8Codec(),
-              ).toString(),
-            ),
+            child: WebViewWidget(controller: controller),
           ),
         );
       }
@@ -215,7 +212,7 @@ ${code}
       time,
       style: TextStyle(
         color: isUser
-            ? Colors.white.withValues(alpha: 0.7)
+            ? Colors.white.withOpacity(0.7)
             : const Color(0xFF9CA3AF), // gray-400
         fontSize: 11,
       ),

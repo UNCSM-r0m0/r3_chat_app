@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:feather_icons/feather_icons.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/logger.dart';
 import '../services/auth_service.dart';
+import '../providers/auth_providers.dart';
 import '../../chat/screens/chat_screen.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final AuthService _authService = AuthService();
   bool _isLoading = false;
 
@@ -82,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(16.r),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.3),
+                          color: Colors.black.withOpacity(0.3),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
@@ -312,6 +314,11 @@ class _LoginScreenState extends State<LoginScreen> {
       if (result.success && result.user != null) {
         AppLogger.success('🎉 Autenticación exitosa con Google', tag: 'LOGIN');
 
+        // actualizar auth state (free por defecto)
+        ref
+            .read(authStateProvider.notifier)
+            .setUser(result.user!, isPro: false);
+
         // Mostrar mensaje y navegar al chat
         messenger.showSnackBar(
           SnackBar(
@@ -380,6 +387,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (result.success && result.user != null) {
         AppLogger.success('🎉 Autenticación exitosa con GitHub', tag: 'LOGIN');
+
+        // actualizar auth state (free por defecto)
+        ref
+            .read(authStateProvider.notifier)
+            .setUser(result.user!, isPro: false);
 
         messenger.showSnackBar(
           SnackBar(

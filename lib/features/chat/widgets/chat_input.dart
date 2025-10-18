@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/chat_providers.dart';
+import '../../auth/providers/auth_providers.dart';
 import 'model_selector.dart';
 
 /// Widget para el input de chat
@@ -134,10 +135,12 @@ class _ChatInputState extends ConsumerState<ChatInput> {
   /// Botón para seleccionar modelo
   Widget _buildModelButton() {
     final chatState = ref.watch(chatStateProvider);
-    final selectedModel = chatState.selectedModel ?? 'gpt-4';
+    final isPro = ref.watch(authStateProvider).isPro;
+    final selectedModel = chatState.selectedModel ?? (isPro ? 'deepseek' : 'ollama');
 
     return GestureDetector(
       onTap: () {
+        if (!isPro) return; // Solo Pro puede cambiar modelo
         setState(() {
           _showModelSelector = !_showModelSelector;
         });
@@ -173,8 +176,8 @@ class _ChatInputState extends ConsumerState<ChatInput> {
               ),
             ),
             const SizedBox(width: 4),
-            const Icon(
-              Icons.keyboard_arrow_down,
+            Icon(
+              isPro ? Icons.keyboard_arrow_down : Icons.lock_outline,
               color: Colors.white,
               size: 16,
             ),
@@ -261,7 +264,8 @@ class _ChatInputState extends ConsumerState<ChatInput> {
     if (text.isEmpty) return;
 
     final chatState = ref.read(chatStateProvider);
-    final model = chatState.selectedModel ?? 'deepseek';
+    final isPro = ref.read(authStateProvider).isPro;
+    final model = chatState.selectedModel ?? (isPro ? 'deepseek' : 'ollama');
 
     ref.read(chatStateProvider.notifier).sendMessage(text, model);
     _controller.clear();

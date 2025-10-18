@@ -60,7 +60,8 @@ dependencies:
   # shared_preferences_android: ^2.4.15 # Actualizado para evitar conflictos
   flutter_secure_storage: ^9.0.0 # Storage seguro (tokens JWT)
 
-  # UI Components  webview_flutter: ^4.10.0
+  # UI Components
+  webview_flutter: ^4.10.0
   shimmer: ^3.0.0 # Loading animations
   animated_text_kit: ^4.2.2 # Text animations
 

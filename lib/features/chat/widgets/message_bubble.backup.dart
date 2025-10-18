@@ -49,7 +49,7 @@ class MessageBubble extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
+                    color: Colors.black.withOpacity(0.1),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -172,7 +172,7 @@ class MessageBubble extends StatelessWidget {
       time,
       style: TextStyle(
         color: isUser
-            ? Colors.white.withValues(alpha: 0.7)
+            ? Colors.white.withOpacity(0.7)
             : const Color(0xFF9CA3AF), // gray-400
         fontSize: 11,
       ),
