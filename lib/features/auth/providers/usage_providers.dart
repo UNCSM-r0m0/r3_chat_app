@@ -8,8 +8,24 @@ final usageServiceProvider = Provider<UsageService>((ref) {
 
 /// Provider para las estadísticas de uso del usuario
 final usageStatsProvider = FutureProvider<UsageStats>((ref) async {
-  final usageService = ref.read(usageServiceProvider);
-  return await usageService.getUsageStats();
+  try {
+    final usageService = ref.read(usageServiceProvider);
+    return await usageService.getUsageStats();
+  } catch (error) {
+    // En caso de error, devolver estadísticas por defecto para evitar crashes
+    return const UsageStats(
+      todayMessages: 0,
+      todayTokens: 0,
+      totalMessages: 0,
+      totalTokens: 0,
+      tier: 'FREE',
+      limits: UsageLimits(
+        messagesPerDay: 20,
+        maxTokensPerMessage: 4096,
+        canUploadImages: false,
+      ),
+    );
+  }
 });
 
 /// Provider para el estado de carga de las estadísticas

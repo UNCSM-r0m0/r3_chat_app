@@ -2,11 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/chat_message.dart';
 import '../services/chat_service.dart';
 import '../../auth/providers/auth_providers.dart';
-
-/// Provider para el servicio de chat
-final chatServiceProvider = Provider<ChatService>((ref) {
-  return ChatService();
-});
+import 'models_providers.dart'; // Importar el provider desde models_providers
 
 /// Provider para el estado del chat actual
 final chatStateProvider = StateNotifierProvider<ChatNotifier, ChatState>((ref) {
@@ -79,11 +75,18 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
       // Actualizar uso y plan si vienen en la respuesta
       if (response.limit != null && response.remaining != null) {
-        final used = (response.limit! - response.remaining!).clamp(0, response.limit!);
-        _ref.read(authStateProvider.notifier).updateUsage(used: used, limit: response.limit!);
+        final used = (response.limit! - response.remaining!).clamp(
+          0,
+          response.limit!,
+        );
+        _ref
+            .read(authStateProvider.notifier)
+            .updateUsage(used: used, limit: response.limit!);
       }
       if (response.tier != null) {
-        _ref.read(authStateProvider.notifier).setIsPro(response.tier!.toUpperCase() == 'PREMIUM');
+        _ref
+            .read(authStateProvider.notifier)
+            .setIsPro(response.tier!.toUpperCase() == 'PREMIUM');
       }
     } catch (error) {
       state = state.copyWith(isLoading: false, error: error.toString());

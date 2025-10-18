@@ -4,10 +4,17 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'core/theme/app_theme.dart';
 import 'core/utils/logger.dart';
 import 'core/utils/logger_test.dart';
+import 'core/utils/error_handler.dart';
+import 'core/config/app_config.dart';
 import 'features/auth/screens/login_screen.dart';
-import 'features/chat/screens/chat_screen.dart';
 
 void main() {
+  // Configurar manejo de errores
+  ErrorHandler.setupErrorHandling();
+
+  // Configurar providers
+  AppConfig.configureProviders();
+
   // Configurar logger para desarrollo
   AppLogger.info('🚀 Iniciando R3 Chat App', tag: 'MAIN');
   AppLogger.separator(tag: 'MAIN');

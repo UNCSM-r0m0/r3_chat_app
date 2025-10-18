@@ -2,10 +2,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/chat_service.dart';
 import '../models/ai_model.dart';
 
+/// Provider para el servicio de chat (reutilizado desde chat_providers)
+final chatServiceProvider = Provider<ChatService>((ref) {
+  return ChatService();
+});
+
 /// Provider para obtener los modelos disponibles
 final availableModelsProvider = FutureProvider<List<AIModel>>((ref) async {
-  final chatService = ChatService();
-  return await chatService.getAvailableModels();
+  try {
+    final chatService = ref.read(chatServiceProvider);
+    return await chatService.getAvailableModels();
+  } catch (error) {
+    // En caso de error, devolver lista vacía para evitar crashes
+    return [];
+  }
 });
 
 /// Provider para el estado de carga de los modelos
@@ -15,11 +25,6 @@ final availableModelsStateProvider =
     ) {
       return AvailableModelsNotifier(ref.read(chatServiceProvider));
     });
-
-/// Provider para el servicio de chat
-final chatServiceProvider = Provider<ChatService>((ref) {
-  return ChatService();
-});
 
 /// Notifier para manejar el estado de los modelos disponibles
 class AvailableModelsNotifier extends StateNotifier<AsyncValue<List<AIModel>>> {

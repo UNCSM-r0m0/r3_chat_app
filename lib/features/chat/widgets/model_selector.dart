@@ -61,7 +61,8 @@ class ModelSelector extends ConsumerWidget {
             data: (models) =>
                 _buildModelsList(models, selectedModel, isPro, ref),
             loading: () => _buildLoadingState(),
-            error: (error, stackTrace) => _buildErrorState(error),
+            error: (error, stackTrace) =>
+                _buildErrorState(error, stackTrace, ref),
           ),
         ],
       ),
@@ -111,7 +112,7 @@ class ModelSelector extends ConsumerWidget {
   }
 
   /// Construir estado de error
-  Widget _buildErrorState(Object error) {
+  Widget _buildErrorState(Object error, StackTrace? stackTrace, WidgetRef ref) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -119,15 +120,27 @@ class ModelSelector extends ConsumerWidget {
           children: [
             const Icon(Icons.error_outline, color: Colors.red, size: 32),
             const SizedBox(height: 8),
-            Text(
+            const Text(
               'Error cargando modelos',
-              style: const TextStyle(color: Colors.red, fontSize: 14),
+              style: TextStyle(color: Colors.red, fontSize: 14),
             ),
             const SizedBox(height: 4),
             Text(
               error.toString(),
               style: const TextStyle(color: Colors.white54, fontSize: 12),
               textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: () {
+                // Refrescar modelos en caso de error
+                ref.read(availableModelsStateProvider.notifier).refresh();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.withOpacity(0.1),
+                foregroundColor: Colors.red,
+              ),
+              child: const Text('Reintentar'),
             ),
           ],
         ),
