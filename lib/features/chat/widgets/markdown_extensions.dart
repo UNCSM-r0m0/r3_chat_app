@@ -136,64 +136,66 @@ class _CodeBlockState extends State<_CodeBlock> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Scrollbar(
-            thumbVisibility: true,
-            controller: _hController,
-            child: SingleChildScrollView(
-              controller: _hController,
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.all(12),
-              child: HighlightView(
-                widget.code,
-                // Asegura un lenguaje por defecto para evitar excepciones
-                language: (widget.language == null || widget.language!.trim().isEmpty)
-                    ? 'plaintext'
-                    : widget.language!.trim(),
-                theme: atom_one_dark.atomOneDarkTheme,
-                padding: EdgeInsets.zero,
-                textStyle: const TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: 13,
-                ),
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          right: 4,
-          top: 4,
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: _copy,
-              borderRadius: BorderRadius.circular(6),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.35),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(_copied ? Icons.check : Icons.copy,
-                        size: 14, color: Colors.white),
-                    const SizedBox(width: 6),
-                    Text(
-                      _copied ? 'Copiado' : 'Copiar',
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final minWidth = constraints.maxWidth;
+        final lang = _normalizeHighlightLanguage(widget.language);
+
+        return Stack(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Scrollbar(
+                thumbVisibility: true,
+                controller: _hController,
+                child: SingleChildScrollView(
+                  controller: _hController,
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.all(12),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minWidth: minWidth),
+                    child: HighlightView(
+                      widget.code,
+                      language: lang.isEmpty ? 'plaintext' : lang,
+                      theme: atom_one_dark.atomOneDarkTheme,
+                      padding: EdgeInsets.zero,
+                      textStyle: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 13,
+                      ),
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
-      ],
+            Positioned(
+              right: 4,
+              top: 4,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _copy,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.35),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(
+                      _copied ? Icons.check : Icons.copy,
+                      size: 14,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -220,5 +222,40 @@ class _MathBlock extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Normaliza alias de lenguajes para highlight.js (flutter_highlight)
+String _normalizeHighlightLanguage(String? lang) {
+  final l = lang?.trim().toLowerCase();
+  if (l == null || l.isEmpty) return 'plaintext';
+  switch (l) {
+    case 'js':
+    case 'node':
+    case 'javascript':
+      return 'javascript';
+    case 'jsx':
+    case 'react':
+      return 'javascript';
+    case 'ts':
+    case 'typescript':
+      return 'typescript';
+    case 'tsx':
+      return 'typescript';
+    case 'sh':
+    case 'shell':
+    case 'zsh':
+    case 'bash':
+      return 'bash';
+    case 'yml':
+    case 'yaml':
+      return 'yaml';
+    case 'md':
+    case 'markdown':
+      return 'markdown';
+    case 'html':
+      return 'xml';
+    default:
+      return l;
   }
 }
