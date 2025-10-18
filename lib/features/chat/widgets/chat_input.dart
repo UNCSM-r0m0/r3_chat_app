@@ -41,7 +41,7 @@ class _ChatInputState extends ConsumerState<ChatInput> {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return SafeArea(
-      top: false,
+      top: false, bottom: false,
       child: AnimatedPadding(
         duration: const Duration(milliseconds: 150),
         curve: Curves.easeOut,
@@ -272,3 +272,4 @@ class _ChatInputState extends ConsumerState<ChatInput> {
     _focusNode.requestFocus();
   }
 }
+

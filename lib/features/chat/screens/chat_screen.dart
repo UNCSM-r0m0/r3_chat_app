@@ -39,7 +39,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           const Expanded(child: ChatArea()),
 
           // Input de chat
-          const SizedBox(height: 4),
           const ChatInput(),
         ],
       ),
@@ -220,3 +219,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 }
+
+
+
