@@ -5,7 +5,6 @@ import 'core/theme/app_theme.dart';
 import 'core/utils/logger.dart';
 import 'core/utils/logger_test.dart';
 import 'core/utils/error_handler.dart';
-import 'core/config/app_config.dart';
 import 'features/auth/screens/login_screen.dart';
 
 void main() {
