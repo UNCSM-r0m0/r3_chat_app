@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../../../core/utils/logger.dart';
+import '../../../core/config/app_config.dart';
 import 'auth_service.dart';
 
 /// Modelo para las estadísticas de uso del usuario
@@ -55,20 +56,14 @@ class UsageLimits {
 
 /// Servicio para manejar estadísticas de uso
 class UsageService {
-  static const String _baseUrl =
-      'https://jeanett-uncolorable-pickily.ngrok-free.dev/api';
-
   final Dio _dio = Dio();
   final AuthService _auth = AuthService();
 
   UsageService() {
-    _dio.options.baseUrl = _baseUrl;
-    _dio.options.connectTimeout = const Duration(seconds: 30);
-    _dio.options.receiveTimeout = const Duration(seconds: 30);
-    _dio.options.headers = {
-      'Content-Type': 'application/json',
-      'ngrok-skip-browser-warning': 'true',
-    };
+    _dio.options.baseUrl = AppConfig.apiBaseUrl;
+    _dio.options.connectTimeout = AppConfig.connectTimeout;
+    _dio.options.receiveTimeout = AppConfig.receiveTimeout;
+    _dio.options.headers = AppConfig.defaultHeaders;
   }
 
   /// Obtener estadísticas de uso del usuario

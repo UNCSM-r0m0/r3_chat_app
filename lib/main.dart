@@ -12,9 +12,6 @@ void main() {
   // Configurar manejo de errores
   ErrorHandler.setupErrorHandling();
 
-  // Configurar providers
-  AppConfig.configureProviders();
-
   // Configurar logger para desarrollo
   AppLogger.info('🚀 Iniciando R3 Chat App', tag: 'MAIN');
   AppLogger.separator(tag: 'MAIN');

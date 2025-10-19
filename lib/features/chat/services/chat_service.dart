@@ -1,29 +1,20 @@
 import 'package:dio/dio.dart';
 import '../../../core/utils/logger.dart';
+import '../../../core/config/app_config.dart';
 import '../../auth/services/auth_service.dart';
 import '../models/chat_message.dart';
 import '../models/ai_model.dart';
 
 /// Servicio para manejar operaciones de chat
 class ChatService {
-  // Usa la IP local de tu PC accesible desde el emulador/dispositivo
-  // Ejemplo para emulador Android: 10.0.2.2
-  static const String _baseUrl =
-      'https://jeanett-uncolorable-pickily.ngrok-free.dev/api';
-
   final Dio _dio = Dio();
   final AuthService _auth = AuthService();
 
   ChatService() {
-    _dio.options.baseUrl = _baseUrl;
-    _dio.options.connectTimeout = const Duration(seconds: 60);
-    _dio.options.receiveTimeout = const Duration(
-      seconds: 120,
-    ); // 2 minutos para modelos lentos
-    _dio.options.headers = {
-      'Content-Type': 'application/json',
-      'ngrok-skip-browser-warning': 'true',
-    };
+    _dio.options.baseUrl = AppConfig.apiBaseUrl;
+    _dio.options.connectTimeout = AppConfig.connectTimeout;
+    _dio.options.receiveTimeout = AppConfig.receiveTimeout;
+    _dio.options.headers = AppConfig.defaultHeaders;
   }
 
   /// Enviar mensaje al chat
@@ -284,7 +275,7 @@ class ChatService {
       final token = await _auth.getToken();
       final res = await _dio.get(
         '/models/public',
-        options: Options(headers: {'ngrok-skip-browser-warning': 'true'}),
+        options: Options(headers: AppConfig.defaultHeaders),
       );
 
       final data = res.data is Map<String, dynamic>

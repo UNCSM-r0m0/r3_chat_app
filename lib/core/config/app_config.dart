@@ -1,30 +1,32 @@
-import 'package:flutter/foundation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-/// Configuración global para providers y estado de la aplicación
+/// Configuración centralizada de la aplicación
 class AppConfig {
-  /// Configurar providers para mejor manejo de errores
-  static void configureProviders() {
-    // Configurar Riverpod para mejor manejo de errores
-    if (kDebugMode) {
-      // En modo debug, habilitar logging adicional
-      debugPrint('🔧 Configuración de providers habilitada para debug');
-    }
-  }
+  // URL del backend - cambiar según tu configuración
+  static const String backendUrl = 'https://api.r0lm0.dev';
 
-  /// Configuración de timeout para operaciones de red
-  static const Duration networkTimeout = Duration(
-    seconds: 120,
-  ); // 2 minutos para modelos lentos
+  // URLs específicas
+  static const String apiBaseUrl = '$backendUrl/api';
 
-  /// Configuración de reintentos para operaciones fallidas
-  static const int maxRetries = 3;
+  // Configuración de Google OAuth
+  static const String googleClientId =
+      '1079549506133-2ot3e6ehdv92ms53dji0cb2lspnp6i52.apps.googleusercontent.com';
 
-  /// Configuración de delay entre reintentos
-  static const Duration retryDelay = Duration(seconds: 2);
+  // Configuración de GitHub OAuth
+  static const String githubClientId =
+      'your_github_client_id'; // TODO: Configurar
+
+  // URLs de callback
+  static const String googleCallbackUrl =
+      '$backendUrl/api/auth/google/callback';
+  static const String githubCallbackUrl =
+      '$backendUrl/api/auth/github/callback';
+
+  // Headers por defecto
+  static const Map<String, String> defaultHeaders = {
+    'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true',
+  };
+
+  // Timeouts
+  static const Duration connectTimeout = Duration(seconds: 30);
+  static const Duration receiveTimeout = Duration(seconds: 120);
 }
-
-/// Provider para configuración global
-final appConfigProvider = Provider<AppConfig>((ref) {
-  return AppConfig();
-});

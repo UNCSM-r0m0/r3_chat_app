@@ -3,15 +3,10 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/utils/logger.dart';
+import '../../../core/config/app_config.dart';
 
 /// Servicio de autenticación para OAuth (Google y GitHub)
 class AuthService {
-  // URL del backend - cambiar según tu configuración
-  // static const String _backendUrl = 'http://localhost:3000';
-  // static const String _backendUrl = 'https://jeanett-uncolorable-pickily.ngrok-free.dev';
-  static const String _backendUrl =
-      'https://jeanett-uncolorable-pickily.ngrok-free.dev';
-
   static const _tokenKey = 'jwt_token';
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
@@ -19,8 +14,7 @@ class AuthService {
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
     // Usar el Client ID de tu configuración
-    serverClientId:
-        '1079549506133-2ot3e6ehdv92ms53dji0cb2lspnp6i52.apps.googleusercontent.com',
+    serverClientId: AppConfig.googleClientId,
   );
 
   /// Iniciar sesión con Google
@@ -109,9 +103,8 @@ class AuthService {
       );
 
       // Construir URL de autorización de GitHub
-      const String clientId = 'your_github_client_id'; // TODO: Configurar
-      const String redirectUri =
-          'https://jeanett-uncolorable-pickily.ngrok-free.dev/api/auth/github/callback';
+      const String clientId = AppConfig.githubClientId; // TODO: Configurar
+      const String redirectUri = AppConfig.githubCallbackUrl;
       const String scope = 'user:email';
 
       final String authUrl =
@@ -182,13 +175,10 @@ class AuthService {
       final dio = Dio();
 
       final response = await dio.post(
-        '$_backendUrl/api/auth/mobile/google-verify',
+        '${AppConfig.apiBaseUrl}/auth/mobile/google-verify',
         data: {'idToken': idToken, 'accessToken': accessToken},
         options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-            'ngrok-skip-browser-warning': 'true',
-          },
+          headers: AppConfig.defaultHeaders,
           followRedirects: false,
           validateStatus: (_) => true,
         ),
@@ -233,12 +223,11 @@ class AuthService {
 
       final dio = Dio();
       final res = await dio.get(
-        '$_backendUrl/api/stripe/subscription',
+        '${AppConfig.apiBaseUrl}/stripe/subscription',
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
-            'Content-Type': 'application/json',
-            'ngrok-skip-browser-warning': 'true',
+            ...AppConfig.defaultHeaders,
           },
         ),
       );
@@ -254,7 +243,11 @@ class AuthService {
 
       return false;
     } catch (error) {
-      AppLogger.error('Error fetching subscription', tag: 'AUTH_SERVICE', error: error);
+      AppLogger.error(
+        'Error fetching subscription',
+        tag: 'AUTH_SERVICE',
+        error: error,
+      );
       return false;
     }
   }
