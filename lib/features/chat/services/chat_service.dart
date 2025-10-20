@@ -27,9 +27,15 @@ class ChatService {
     try {
       AppLogger.chat('📤 Enviando mensaje: $message', tag: 'CHAT_SERVICE');
 
+      // Normalizar modelo: si viene 'ollama' a secas, usar uno soportado por el backend
+      final String normalizedModel =
+          (model.trim().toLowerCase() == 'ollama')
+              ? 'ollama-qwen2.5-coder:7b'
+              : model;
+
       final payload = {
         'content': message,
-        'model': model,
+        'model': normalizedModel,
         if (conversationId != null) 'conversationId': conversationId,
       };
 
@@ -57,7 +63,7 @@ class ChatService {
         timestamp:
             DateTime.tryParse(messageData?['createdAt']?.toString() ?? '') ??
             DateTime.now(),
-        model: model,
+        model: normalizedModel,
       );
 
       AppLogger.chat('📥 Respuesta recibida del backend', tag: 'CHAT_SERVICE');
@@ -312,7 +318,7 @@ class ChatService {
         isPremium: false,
         features: ['text-generation', 'local-processing'],
         description: 'Modelo local ejecutándose en tu servidor',
-        defaultModel: 'deepseek-r1:7b',
+        defaultModel: 'qwen2.5-coder:7b',
       ),
       const AIModel(
         id: 'gemini',

@@ -28,11 +28,15 @@ class ChatNotifier extends StateNotifier<ChatState> {
     try {
       state = state.copyWith(isLoading: true, error: null);
       final chat = await _chatService.getChat(chatId);
+      final normalizedModel =
+          (chat.model != null && chat.model == 'ollama')
+              ? 'ollama-qwen2.5-coder:7b'
+              : chat.model;
       state = state.copyWith(
         messages: chat.messages,
         isLoading: false,
         currentChatId: chat.id,
-        selectedModel: chat.model ?? state.selectedModel,
+        selectedModel: normalizedModel ?? state.selectedModel,
         error: null,
       );
     } catch (error) {

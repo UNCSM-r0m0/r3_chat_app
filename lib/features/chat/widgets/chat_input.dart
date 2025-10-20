@@ -176,8 +176,8 @@ class _ChatInputState extends ConsumerState<ChatInput> {
   Widget _buildModelButton() {
     final chatState = ref.watch(chatStateProvider);
     final isPro = ref.watch(authStateProvider).isPro;
-    final selectedModel =
-        chatState.selectedModel ?? (isPro ? 'deepseek' : 'ollama');
+    final selectedModel = chatState.selectedModel ??
+        (isPro ? 'deepseek' : 'ollama-qwen2.5-coder:7b');
 
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final isKeyboardVisible = bottomInset > 0;
@@ -347,7 +347,8 @@ class _ChatInputState extends ConsumerState<ChatInput> {
 
     final chatState = ref.read(chatStateProvider);
     final isPro = ref.read(authStateProvider).isPro;
-    final model = chatState.selectedModel ?? (isPro ? 'deepseek' : 'ollama');
+    final model = chatState.selectedModel ??
+        (isPro ? 'deepseek' : 'ollama-qwen2.5-coder:7b');
 
     ref.read(chatStateProvider.notifier).sendMessage(text, model);
     _controller.clear();
