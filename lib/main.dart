@@ -6,6 +6,8 @@ import 'core/utils/logger.dart';
 import 'core/utils/logger_test.dart';
 import 'core/utils/error_handler.dart';
 import 'features/auth/screens/login_screen.dart';
+import 'features/chat/screens/chat_screen.dart';
+import 'features/auth/services/auth_service.dart';
 
 void main() {
   // Configurar manejo de errores
@@ -118,10 +120,26 @@ class _SplashScreenState extends State<SplashScreen>
     _textController.forward();
     AppLogger.debug('Text animation iniciada', tag: 'SPLASH');
 
-    // Navigate to login after splash duration
-    await Future.delayed(const Duration(milliseconds: 3000));
-    if (mounted) {
-      AppLogger.info('🔄 Navegando a pantalla de login', tag: 'SPLASH');
+    // En paralelo, validar token mientras corre la animación
+    final auth = AuthService();
+    final tokenCheck = auth.hasValidToken();
+
+    // Esperar a que terminen animaciones y validación
+    final results = await Future.wait([
+      Future.delayed(const Duration(milliseconds: 3000)),
+      tokenCheck,
+    ]);
+
+    final isValid = results[1] as bool;
+
+    if (!mounted) return;
+    if (isValid) {
+      AppLogger.info('✅ Token válido. Navegando a Chat', tag: 'SPLASH');
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const ChatScreen()),
+      );
+    } else {
+      AppLogger.info('🔐 Sin sesión o token expirado. Login', tag: 'SPLASH');
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const LoginScreen()),
       );

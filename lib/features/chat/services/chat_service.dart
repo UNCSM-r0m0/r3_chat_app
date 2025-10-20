@@ -89,7 +89,7 @@ class ChatService {
 
       final token = await _auth.getToken();
       final res = await _dio.get(
-        '/chat',
+        '/chat/sessions',
         options: Options(
           headers: {if (token != null) 'Authorization': 'Bearer $token'},
         ),
@@ -145,18 +145,16 @@ class ChatService {
       final map = res.data is Map<String, dynamic>
           ? res.data as Map<String, dynamic>
           : Map<String, dynamic>.from(res.data);
+      final chatMap = (map['data'] ?? map) as Map<String, dynamic>;
       final chat = Chat(
-        id:
-            map['id']?.toString() ??
+        id: chatMap['id']?.toString() ??
             DateTime.now().millisecondsSinceEpoch.toString(),
-        title: map['title']?.toString() ?? 'Nueva conversación',
-        createdAt:
-            DateTime.tryParse(map['createdAt']?.toString() ?? '') ??
+        title: chatMap['title']?.toString() ?? 'Nueva conversación',
+        createdAt: DateTime.tryParse(chatMap['createdAt']?.toString() ?? '') ??
             DateTime.now(),
-        updatedAt:
-            DateTime.tryParse(map['updatedAt']?.toString() ?? '') ??
+        updatedAt: DateTime.tryParse(chatMap['updatedAt']?.toString() ?? '') ??
             DateTime.now(),
-        model: map['model']?.toString(),
+        model: chatMap['model']?.toString(),
       );
       AppLogger.chat('✅ Chat creado: ${chat.id}', tag: 'CHAT_SERVICE');
       return chat;

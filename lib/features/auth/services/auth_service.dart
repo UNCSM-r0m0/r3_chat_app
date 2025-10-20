@@ -2,6 +2,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'dart:convert';
 import '../../../core/utils/logger.dart';
 import '../../../core/config/app_config.dart';
 
@@ -213,6 +214,37 @@ class AuthService {
   /// Obtener token actual (si existe)
   Future<String?> getToken() async {
     return _storage.read(key: _tokenKey);
+  }
+
+  /// Verifica si el JWT existe y no ha expirado (exp)
+  Future<bool> hasValidToken() async {
+    try {
+      final token = await getToken();
+      if (token == null || token.isEmpty) return false;
+
+      final parts = token.split('.');
+      if (parts.length != 3) return false;
+      String normalize(String input) {
+        // base64url padding
+        final mod = input.length % 4;
+        if (mod == 2) return '${input}==';
+        if (mod == 3) return '${input}=';
+        if (mod == 0) return input;
+        return input; // unusual, but avoid crash
+      }
+
+      final payloadMap = json.decode(utf8.decode(
+        base64Url.decode(normalize(parts[1])),
+      )) as Map<String, dynamic>;
+
+      final exp = payloadMap['exp'];
+      if (exp is! int) return false;
+      final expiresAt = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+      // margen de 30s para evitar carreras
+      return expiresAt.isAfter(DateTime.now().add(const Duration(seconds: -30)));
+    } catch (e) {
+      return false;
+    }
   }
 
   /// Consultar suscripción del usuario para saber si es PRO
