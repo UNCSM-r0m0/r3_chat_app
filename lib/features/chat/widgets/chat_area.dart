@@ -10,8 +10,14 @@ class ChatArea extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final chatState = ref.watch(chatStateProvider);
-    final messages = chatState.messages;
+    // Usar select para solo reconstruir cuando cambian los mensajes o el estado de loading
+    // Esto evita reconstrucciones innecesarias cuando cambian otros campos del estado
+    final messages = ref.watch(
+      chatStateProvider.select((state) => state.messages),
+    );
+    final isLoading = ref.watch(
+      chatStateProvider.select((state) => state.isLoading),
+    );
 
     return Container(
       decoration: const BoxDecoration(
@@ -26,7 +32,7 @@ class ChatArea extends ConsumerWidget {
       ),
       child: messages.isEmpty
           ? _buildEmptyState()
-          : _buildMessagesList(messages, chatState.isLoading),
+          : _buildMessagesList(messages, isLoading),
     );
   }
 
@@ -96,6 +102,10 @@ class ChatArea extends ConsumerWidget {
       itemCount: messages.length + (isLoading ? 1 : 0),
       // Usar keys para identificar mensajes únicos y evitar reconstrucciones innecesarias
       key: const PageStorageKey('chat_messages'),
+      // Evitar mantener widgets vivos innecesariamente
+      addAutomaticKeepAlives: false,
+      // Evitar reconstrucciones innecesarias de items fuera de la vista
+      addRepaintBoundaries: true,
       itemBuilder: (context, index) {
         if (index == messages.length && isLoading) {
           return _buildTypingIndicator();
@@ -103,7 +113,12 @@ class ChatArea extends ConsumerWidget {
 
         final message = messages[index];
         // Key única basada en el ID del mensaje para evitar duplicados
-        return MessageBubble(key: ValueKey(message.id), message: message);
+        // Usar ValueKey con el ID para que Flutter identifique correctamente el mismo mensaje
+        // incluso cuando su contenido cambia durante el streaming
+        return MessageBubble(
+          key: ValueKey('msg_${message.id}'),
+          message: message,
+        );
       },
     );
   }

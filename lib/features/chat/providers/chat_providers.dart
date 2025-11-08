@@ -48,17 +48,20 @@ class ChatNotifier extends StateNotifier<ChatState> {
     if (message.trim().isEmpty) return;
 
     try {
+      // Generar IDs únicos y estables por rol para evitar colisiones
+      final ts = DateTime.now().microsecondsSinceEpoch;
+      final userId = 'u_$ts';
+      final assistantMessageId = 'a_$ts';
+
       // Agregar mensaje del usuario
       final userMessage = ChatMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: userId,
         role: ChatRole.user,
         content: message,
         timestamp: DateTime.now(),
       );
 
       // Crear mensaje de asistente vacío para streaming
-      final assistantMessageId = DateTime.now().millisecondsSinceEpoch
-          .toString();
       final assistant = ChatMessage(
         id: assistantMessageId,
         role: ChatRole.assistant,
@@ -68,16 +71,45 @@ class ChatNotifier extends StateNotifier<ChatState> {
         isStreaming: true,
       );
 
+      // Guardar los mensajes actuales antes de agregar los nuevos
+      final currentMessages = List<ChatMessage>.from(state.messages);
+      final newMessages = [...currentMessages, userMessage, assistant];
+
       state = state.copyWith(
-        messages: [...state.messages, userMessage, assistant],
+        messages: newMessages,
         isLoading: true,
         isStreaming: true,
         error: null,
       );
 
+      // Verificar que el mensaje del usuario se agregó correctamente
+      assert(
+        state.messages.any(
+          (msg) => msg.id == userMessage.id && msg.content == message,
+        ),
+        'El mensaje del usuario no se agregó correctamente',
+      );
+
+      // Verificar que se agregaron los dos mensajes (usuario y asistente) y que sus IDs son únicos
+      assert(
+        state.messages.length >= 2 &&
+            state.messages[state.messages.length - 2].id == userId &&
+            state.messages[state.messages.length - 2].role == ChatRole.user &&
+            state.messages.last.id == assistantMessageId &&
+            state.messages.last.role == ChatRole.assistant &&
+            state.messages.last.id != state.messages[state.messages.length - 2].id,
+        'Error al agregar mensajes iniciales o IDs duplicados (usuario/asistente)'
+      );
+
+      // Verificar IDs únicos en toda la lista
+      assert(
+        state.messages.map((m) => m.id).toSet().length == state.messages.length,
+        'Se detectaron IDs duplicados en la lista de mensajes',
+      );
+
       // Actualizar conversationId si no existe
       String? conversationId = state.currentChatId;
-      if (conversationId == null && state.messages.isEmpty) {
+      if (conversationId == null) {
         // Crear nuevo chat si es necesario
         try {
           final newChat = await _chatService.createNewChat();
@@ -90,6 +122,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
       // Procesar stream
       String fullContent = '';
+      bool streamCompleted = false;
+      String? lastUpdatedContent; // Track del último contenido actualizado
+
       await for (final event in _chatService.sendMessageStream(
         message: message,
         model: model,
@@ -98,37 +133,159 @@ class ChatNotifier extends StateNotifier<ChatState> {
         if (event is StreamChunkEvent) {
           // Actualizar contenido del mensaje mientras llega
           fullContent += event.content;
-          final updatedAssistant = assistant.copyWith(
-            content: fullContent,
-            isStreaming: true,
+
+          // Verificar si el contenido realmente cambió antes de actualizar
+          final currentMessage = state.messages.firstWhere(
+            (msg) => msg.id == assistantMessageId,
+            orElse: () => assistant,
           );
 
-          // Actualizar mensaje en la lista
-          final updatedMessages = state.messages.map((msg) {
-            return msg.id == assistantMessageId ? updatedAssistant : msg;
-          }).toList();
+          // Solo actualizar si el contenido cambió y es diferente al último actualizado
+          // Esto evita actualizaciones redundantes cuando llegan chunks vacíos o duplicados
+          if (currentMessage.content != fullContent &&
+              lastUpdatedContent != fullContent &&
+              fullContent.isNotEmpty) {
+            lastUpdatedContent = fullContent;
 
-          state = state.copyWith(messages: updatedMessages);
-        } else if (event is StreamCompleteEvent) {
-          // Stream completado - usar el contenido que ya tenemos acumulado
-          // para evitar renderizar dos veces el mismo contenido
-          // Solo actualizar el estado de streaming sin cambiar el contenido ni el ID
-          // para evitar que Flutter trate el mensaje como nuevo
-          final updatedMessages = state.messages.map((msg) {
-            if (msg.id == assistantMessageId) {
-              // Solo actualizar el estado de streaming, mantener todo lo demás igual
-              // Esto evita que Flutter reconstruya el widget como un mensaje nuevo
-              return msg.copyWith(isStreaming: false);
+            final updatedAssistant = currentMessage.copyWith(
+              content: fullContent,
+              isStreaming: true,
+            );
+
+            // Crear nueva lista solo si el mensaje realmente cambió
+            // Usar un enfoque más eficiente: buscar el índice y reemplazar solo ese elemento
+            final messageIndex = state.messages.indexWhere(
+              (msg) => msg.id == assistantMessageId,
+            );
+
+            if (messageIndex != -1) {
+              // Crear nueva lista reemplazando solo el mensaje que cambió
+              // IMPORTANTE: Preservar todos los mensajes anteriores, incluyendo el del usuario
+              final messagesBefore = state.messages.take(messageIndex).toList();
+              final messagesAfter = state.messages
+                  .skip(messageIndex + 1)
+                  .toList();
+
+              final updatedMessages = [
+                ...messagesBefore,
+                updatedAssistant,
+                ...messagesAfter,
+              ];
+
+              // Verificar que todos los mensajes se preservaron
+              assert(
+                updatedMessages.length == state.messages.length,
+                'La cantidad de mensajes cambió: ${state.messages.length} -> ${updatedMessages.length}',
+              );
+
+              // Verificar que el mensaje del usuario sigue presente
+              final userMsgExists = updatedMessages.any(
+                (msg) => msg.role == ChatRole.user && msg.content == message,
+              );
+              assert(
+                userMsgExists,
+                'El mensaje del usuario se perdió durante la actualización',
+              );
+
+              // Verificar IDs únicos tras la actualización
+              assert(
+                updatedMessages.map((m) => m.id).toSet().length == updatedMessages.length,
+                'IDs duplicados detectados tras actualizar chunk',
+              );
+
+              state = state.copyWith(messages: updatedMessages);
             }
-            return msg;
-          }).toList();
+          }
+        } else if (event is StreamCompleteEvent) {
+          // Stream completado - evitar actualizar si ya se completó
+          if (streamCompleted) {
+            // Ya se procesó, salir inmediatamente
+            break;
+          }
+          streamCompleted = true;
 
-          state = state.copyWith(
-            messages: updatedMessages,
-            isLoading: false,
-            isStreaming: false,
-            currentChatId: event.conversationId ?? state.currentChatId,
+          // Verificar si el contenido del mensaje actual ya coincide con el contenido completo
+          final currentMessage = state.messages.firstWhere(
+            (msg) => msg.id == assistantMessageId,
+            orElse: () => assistant,
           );
+
+          // Solo actualizar si realmente es necesario
+          // Comparar contenido y estado de streaming
+          final contentChanged = currentMessage.content != fullContent;
+          final streamingChanged = currentMessage.isStreaming != false;
+          final needsMessageUpdate = contentChanged || streamingChanged;
+
+          if (needsMessageUpdate) {
+            // Actualizar solo el mensaje específico sin crear una nueva lista completa
+            final messageIndex = state.messages.indexWhere(
+              (msg) => msg.id == assistantMessageId,
+            );
+
+            if (messageIndex != -1) {
+              // Crear nueva lista reemplazando solo el mensaje que cambió
+              // IMPORTANTE: Preservar todos los mensajes anteriores, incluyendo el del usuario
+              final messagesBefore = state.messages.take(messageIndex).toList();
+              final messagesAfter = state.messages
+                  .skip(messageIndex + 1)
+                  .toList();
+
+              final updatedMessage = state.messages[messageIndex].copyWith(
+                content: fullContent,
+                isStreaming: false,
+              );
+
+              final updatedMessages = [
+                ...messagesBefore,
+                updatedMessage,
+                ...messagesAfter,
+              ];
+
+              // Verificar que todos los mensajes se preservaron
+              assert(
+                updatedMessages.length == state.messages.length,
+                'La cantidad de mensajes cambió al completar: ${state.messages.length} -> ${updatedMessages.length}',
+              );
+
+              // Verificar que el mensaje del usuario sigue presente
+              final userMsgExists = updatedMessages.any(
+                (msg) => msg.role == ChatRole.user && msg.content == message,
+              );
+              assert(
+                userMsgExists,
+                'El mensaje del usuario se perdió al completar el stream',
+              );
+
+              // Verificar IDs únicos tras completar
+              assert(
+                updatedMessages.map((m) => m.id).toSet().length == updatedMessages.length,
+                'IDs duplicados detectados al completar el stream',
+              );
+
+              // Actualizar estado en una sola operación
+              state = state.copyWith(
+                messages: updatedMessages,
+                isLoading: false,
+                isStreaming: false,
+                currentChatId: event.conversationId ?? state.currentChatId,
+              );
+            } else {
+              // Si no se encuentra el mensaje, solo actualizar el estado general
+              state = state.copyWith(
+                isLoading: false,
+                isStreaming: false,
+                currentChatId: event.conversationId ?? state.currentChatId,
+              );
+            }
+          } else {
+            // El contenido ya está actualizado, solo cambiar el estado general
+            // sin tocar los mensajes para evitar reconstrucciones innecesarias
+            state = state.copyWith(
+              isLoading: false,
+              isStreaming: false,
+              currentChatId: event.conversationId ?? state.currentChatId,
+            );
+          }
 
           // Actualizar uso y plan
           if (event.limit != null && event.remaining != null) {

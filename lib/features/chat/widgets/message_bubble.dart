@@ -5,13 +5,49 @@ import 'markdown_extensions.dart';
 import '../models/chat_message.dart';
 
 /// Widget para mostrar un mensaje en el chat
-class MessageBubble extends StatelessWidget {
+/// Usa StatefulWidget para controlar mejor las actualizaciones y evitar doble renderizado
+class MessageBubble extends StatefulWidget {
   final ChatMessage message;
 
   const MessageBubble({super.key, required this.message});
 
   @override
+  State<MessageBubble> createState() => _MessageBubbleState();
+}
+
+class _MessageBubbleState extends State<MessageBubble> {
+  late ChatMessage _currentMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentMessage = widget.message;
+  }
+
+  @override
+  void didUpdateWidget(MessageBubble oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Asegurar sincronización del mensaje con el widget y reconstruir cuando
+    // cambian id, contenido o isStreaming (para reflejar estado de stream)
+    final idChanged = oldWidget.message.id != widget.message.id;
+    final contentChanged = oldWidget.message.content != widget.message.content;
+    final streamingChanged =
+        (oldWidget.message.isStreaming ?? false) !=
+        (widget.message.isStreaming ?? false);
+
+    if (idChanged || contentChanged || streamingChanged) {
+      setState(() {
+        _currentMessage = widget.message;
+      });
+    } else {
+      // Mantener sincronizado sin forzar un rebuild
+      _currentMessage = widget.message;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final message = _currentMessage;
     final isUser = message.role == ChatRole.user;
 
     return Padding(
@@ -75,7 +111,7 @@ class MessageBubble extends StatelessWidget {
 
   /// Widget para el avatar del usuario/IA
   Widget _buildAvatar() {
-    final isUser = message.role == ChatRole.user;
+    final isUser = _currentMessage.role == ChatRole.user;
 
     return Container(
       width: 32,
@@ -110,11 +146,11 @@ class MessageBubble extends StatelessWidget {
 
   /// Widget para el contenido del mensaje
   Widget _buildMessageContent() {
-    final isUser = message.role == ChatRole.user;
+    final isUser = _currentMessage.role == ChatRole.user;
 
     if (isUser) {
       return Text(
-        message.content,
+        _currentMessage.content,
         style: const TextStyle(
           color: Colors.white,
           fontSize: 14,
@@ -126,7 +162,7 @@ class MessageBubble extends StatelessWidget {
       final mermaidMatch = RegExp(
         r'```mermaid\s+([\s\S]*?)```',
         multiLine: true,
-      ).firstMatch(message.content);
+      ).firstMatch(_currentMessage.content);
       if (mermaidMatch != null) {
         final diagram = mermaidMatch.group(1) ?? '';
         final controller = WebViewController()
@@ -147,8 +183,10 @@ class MessageBubble extends StatelessWidget {
       // cuando solo cambia el estado de streaming
       return RepaintBoundary(
         child: MarkdownBody(
-          key: ValueKey('markdown_${message.id}_${message.content.hashCode}'),
-          data: preprocessMarkdownForMath(message.content),
+          key: ValueKey(
+            'markdown_${_currentMessage.id}_${_currentMessage.content.hashCode}',
+          ),
+          data: preprocessMarkdownForMath(_currentMessage.content),
           inlineSyntaxes: [MathInlineSyntax()],
           builders: {
             'pre': PreCodeBlockBuilder(),
@@ -219,8 +257,8 @@ ${code}
 
   /// Widget para el timestamp
   Widget _buildTimestamp() {
-    final isUser = message.role == ChatRole.user;
-    final time = _formatTime(message.timestamp);
+    final isUser = _currentMessage.role == ChatRole.user;
+    final time = _formatTime(_currentMessage.timestamp);
 
     return Text(
       time,
