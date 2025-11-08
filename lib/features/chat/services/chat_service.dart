@@ -28,10 +28,9 @@ class ChatService {
       AppLogger.chat('📤 Enviando mensaje: $message', tag: 'CHAT_SERVICE');
 
       // Normalizar modelo: si viene 'ollama' a secas, usar uno soportado por el backend
-      final String normalizedModel =
-          (model.trim().toLowerCase() == 'ollama')
-              ? 'ollama-qwen2.5-coder:7b'
-              : model;
+      final String normalizedModel = (model.trim().toLowerCase() == 'ollama')
+          ? 'ollama-qwen2.5-coder:7b'
+          : model;
 
       final payload = {
         'content': message,
@@ -39,38 +38,79 @@ class ChatService {
         if (conversationId != null) 'conversationId': conversationId,
       };
 
+      // Modelos locales (LLM Studio) pueden tardar más tiempo (hasta 5 minutos)
+      // Modelos cloud suelen ser más rápidos (2 minutos)
+      final bool isLocalModel =
+          normalizedModel.toLowerCase() == 'openai' ||
+          normalizedModel.toLowerCase().startsWith('ollama');
+      final Duration timeout = isLocalModel
+          ? const Duration(minutes: 5) // 5 minutos para modelos locales
+          : const Duration(minutes: 2); // 2 minutos para modelos cloud
+
+      AppLogger.chat(
+        '⏱️ Timeout configurado: ${timeout.inMinutes} minutos (modelo: ${isLocalModel ? "local" : "cloud"})',
+        tag: 'CHAT_SERVICE',
+      );
+
       final token = await _auth.getToken();
       final res = await _dio.post(
         '/chat/message',
         data: payload,
         options: Options(
           headers: {if (token != null) 'Authorization': 'Bearer $token'},
+          receiveTimeout: timeout,
+          sendTimeout: const Duration(seconds: 30),
         ),
+      );
+
+      AppLogger.chat(
+        '📥 Respuesta recibida del backend (status: ${res.statusCode})',
+        tag: 'CHAT_SERVICE',
       );
 
       final data = res.data is Map<String, dynamic>
           ? res.data as Map<String, dynamic>
           : Map<String, dynamic>.from(res.data);
 
+      AppLogger.chat(
+        '📋 Datos parseados: ${data.keys.join(", ")}',
+        tag: 'CHAT_SERVICE',
+      );
+
       // Backend devuelve { conversationId, message: { id, role, content, createdAt, tokensUsed }, remaining, limit, tier }
       final messageData = data['message'] as Map<String, dynamic>?;
+
+      if (messageData == null) {
+        AppLogger.error(
+          '❌ messageData es null. Datos recibidos: ${data.toString()}',
+          tag: 'CHAT_SERVICE',
+        );
+        throw Exception('Respuesta del servidor no contiene mensaje');
+      }
+
+      final content = messageData['content']?.toString() ?? 'Sin respuesta';
+      AppLogger.chat(
+        '✅ Contenido del mensaje: ${content.length} caracteres',
+        tag: 'CHAT_SERVICE',
+      );
+
       final assistant = ChatMessage(
         id:
-            messageData?['id']?.toString() ??
+            messageData['id']?.toString() ??
             DateTime.now().millisecondsSinceEpoch.toString(),
         role: ChatRole.assistant,
-        content: messageData?['content']?.toString() ?? 'Sin respuesta',
+        content: content,
         timestamp:
-            DateTime.tryParse(messageData?['createdAt']?.toString() ?? '') ??
+            DateTime.tryParse(messageData['createdAt']?.toString() ?? '') ??
             DateTime.now(),
         model: normalizedModel,
       );
 
-      AppLogger.chat('📥 Respuesta recibida del backend', tag: 'CHAT_SERVICE');
       final remaining = (res.data as Map)['remaining'];
       final limit = (res.data as Map)['limit'];
       final tier = (res.data as Map)['tier']?.toString();
-      return ChatResponse(
+
+      final response = ChatResponse(
         message: assistant,
         remaining: (remaining is int)
             ? remaining
@@ -78,9 +118,69 @@ class ChatService {
         limit: (limit is int) ? limit : int.tryParse(limit?.toString() ?? ''),
         tier: tier,
       );
+
+      AppLogger.chat(
+        '✅ Respuesta procesada exitosamente: ${assistant.content.length} caracteres',
+        tag: 'CHAT_SERVICE',
+      );
+
+      return response;
+    } on DioException catch (error) {
+      // Manejo específico de errores de Dio
+      String errorMessage = 'Error al enviar mensaje';
+
+      if (error.type == DioExceptionType.connectionTimeout ||
+          error.type == DioExceptionType.receiveTimeout) {
+        errorMessage =
+            'El modelo está tardando más de lo esperado. '
+            'Esto es normal con modelos locales. Intenta nuevamente o usa un modelo más rápido.';
+        AppLogger.error(
+          '⏰ Timeout esperando respuesta del modelo',
+          tag: 'CHAT_SERVICE',
+          error: error,
+        );
+      } else if (error.type == DioExceptionType.badResponse) {
+        final statusCode = error.response?.statusCode;
+        final responseData = error.response?.data;
+
+        if (statusCode == 403) {
+          errorMessage =
+              responseData?['message']?.toString() ??
+              'No tienes permisos para usar este modelo.';
+        } else if (statusCode == 429) {
+          errorMessage =
+              'Has alcanzado tu límite de mensajes. Intenta más tarde.';
+        } else {
+          errorMessage =
+              responseData?['message']?.toString() ??
+              'Error del servidor: ${statusCode ?? "desconocido"}';
+        }
+
+        AppLogger.error(
+          '❌ Error del servidor: $statusCode',
+          tag: 'CHAT_SERVICE',
+          error: error,
+        );
+      } else if (error.type == DioExceptionType.connectionError) {
+        errorMessage =
+            'Error de conexión. Verifica tu internet e intenta nuevamente.';
+        AppLogger.error(
+          '🌐 Error de conexión',
+          tag: 'CHAT_SERVICE',
+          error: error,
+        );
+      } else {
+        AppLogger.error(
+          '❌ Error enviando mensaje',
+          tag: 'CHAT_SERVICE',
+          error: error,
+        );
+      }
+
+      throw Exception(errorMessage);
     } catch (error) {
       AppLogger.error(
-        '❌ Error enviando mensaje',
+        '❌ Error inesperado enviando mensaje',
         tag: 'CHAT_SERVICE',
         error: error,
       );
@@ -153,12 +253,15 @@ class ChatService {
           : Map<String, dynamic>.from(res.data);
       final chatMap = (map['data'] ?? map) as Map<String, dynamic>;
       final chat = Chat(
-        id: chatMap['id']?.toString() ??
+        id:
+            chatMap['id']?.toString() ??
             DateTime.now().millisecondsSinceEpoch.toString(),
         title: chatMap['title']?.toString() ?? 'Nueva conversación',
-        createdAt: DateTime.tryParse(chatMap['createdAt']?.toString() ?? '') ??
+        createdAt:
+            DateTime.tryParse(chatMap['createdAt']?.toString() ?? '') ??
             DateTime.now(),
-        updatedAt: DateTime.tryParse(chatMap['updatedAt']?.toString() ?? '') ??
+        updatedAt:
+            DateTime.tryParse(chatMap['updatedAt']?.toString() ?? '') ??
             DateTime.now(),
         model: chatMap['model']?.toString(),
       );
@@ -276,7 +379,7 @@ class ChatService {
     try {
       AppLogger.chat('🤖 Obteniendo modelos disponibles', tag: 'CHAT_SERVICE');
 
-      final token = await _auth.getToken();
+      // Endpoint público, no requiere autenticación
       final res = await _dio.get(
         '/models/public',
         options: Options(headers: AppConfig.defaultHeaders),
