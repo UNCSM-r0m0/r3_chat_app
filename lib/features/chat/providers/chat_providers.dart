@@ -112,16 +112,13 @@ class ChatNotifier extends StateNotifier<ChatState> {
         } else if (event is StreamCompleteEvent) {
           // Stream completado - usar el contenido que ya tenemos acumulado
           // para evitar renderizar dos veces el mismo contenido
+          // Solo actualizar el estado de streaming sin cambiar el contenido ni el ID
+          // para evitar que Flutter trate el mensaje como nuevo
           final updatedMessages = state.messages.map((msg) {
             if (msg.id == assistantMessageId) {
-              // Solo actualizar el estado de streaming, el contenido ya está actualizado
-              return msg.copyWith(
-                isStreaming: false,
-                // Actualizar ID si viene uno nuevo del backend
-                id: event.message.id != assistantMessageId
-                    ? event.message.id
-                    : assistantMessageId,
-              );
+              // Solo actualizar el estado de streaming, mantener todo lo demás igual
+              // Esto evita que Flutter reconstruya el widget como un mensaje nuevo
+              return msg.copyWith(isStreaming: false);
             }
             return msg;
           }).toList();

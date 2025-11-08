@@ -123,7 +123,10 @@ class MessageBubble extends StatelessWidget {
         ),
       );
     } else {
-      final mermaidMatch = RegExp(r'```mermaid\s+([\s\S]*?)```', multiLine: true).firstMatch(message.content);
+      final mermaidMatch = RegExp(
+        r'```mermaid\s+([\s\S]*?)```',
+        multiLine: true,
+      ).firstMatch(message.content);
       if (mermaidMatch != null) {
         final diagram = mermaidMatch.group(1) ?? '';
         final controller = WebViewController()
@@ -140,49 +143,52 @@ class MessageBubble extends StatelessWidget {
         );
       }
 
-      return MarkdownBody(
-        data: preprocessMarkdownForMath(message.content),
-        inlineSyntaxes: [
-          MathInlineSyntax(),
-        ],
-        builders: {
-          'pre': PreCodeBlockBuilder(),
-          'math-inline': MathInlineBuilder(),
-        },
-        styleSheet: MarkdownStyleSheet(
-          p: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4),
-          code: const TextStyle(
-            backgroundColor: Color(0xFF1F2937), // gray-800
-            color: Color(0xFFF3F4F6), // gray-100
-            fontFamily: 'monospace',
-          ),
-          codeblockDecoration: BoxDecoration(
-            color: const Color(0xFF1F2937), // gray-800
-            borderRadius: BorderRadius.circular(8),
-          ),
-          blockquote: const TextStyle(
-            color: Color(0xFF9CA3AF), // gray-400
-            fontStyle: FontStyle.italic,
-          ),
-          listBullet: const TextStyle(color: Colors.white),
-          h1: const TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-          h2: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-          h3: const TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
-          a: const TextStyle(
-            color: Color(0xFF8B5CF6), // purple-500
-            decoration: TextDecoration.underline,
+      // Usar RepaintBoundary y key para evitar reconstrucciones innecesarias
+      // cuando solo cambia el estado de streaming
+      return RepaintBoundary(
+        child: MarkdownBody(
+          key: ValueKey('markdown_${message.id}_${message.content.hashCode}'),
+          data: preprocessMarkdownForMath(message.content),
+          inlineSyntaxes: [MathInlineSyntax()],
+          builders: {
+            'pre': PreCodeBlockBuilder(),
+            'math-inline': MathInlineBuilder(),
+          },
+          styleSheet: MarkdownStyleSheet(
+            p: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4),
+            code: const TextStyle(
+              backgroundColor: Color(0xFF1F2937), // gray-800
+              color: Color(0xFFF3F4F6), // gray-100
+              fontFamily: 'monospace',
+            ),
+            codeblockDecoration: BoxDecoration(
+              color: const Color(0xFF1F2937), // gray-800
+              borderRadius: BorderRadius.circular(8),
+            ),
+            blockquote: const TextStyle(
+              color: Color(0xFF9CA3AF), // gray-400
+              fontStyle: FontStyle.italic,
+            ),
+            listBullet: const TextStyle(color: Colors.white),
+            h1: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+            h2: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+            h3: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+            a: const TextStyle(
+              color: Color(0xFF8B5CF6), // purple-500
+              decoration: TextDecoration.underline,
+            ),
           ),
         ),
       );

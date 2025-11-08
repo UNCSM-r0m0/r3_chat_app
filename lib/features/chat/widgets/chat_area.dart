@@ -94,13 +94,16 @@ class ChatArea extends ConsumerWidget {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: messages.length + (isLoading ? 1 : 0),
+      // Usar keys para identificar mensajes únicos y evitar reconstrucciones innecesarias
+      key: const PageStorageKey('chat_messages'),
       itemBuilder: (context, index) {
         if (index == messages.length && isLoading) {
           return _buildTypingIndicator();
         }
 
         final message = messages[index];
-        return MessageBubble(message: message);
+        // Key única basada en el ID del mensaje para evitar duplicados
+        return MessageBubble(key: ValueKey(message.id), message: message);
       },
     );
   }
