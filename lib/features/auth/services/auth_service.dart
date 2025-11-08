@@ -233,15 +233,17 @@ class AuthService {
         return input; // unusual, but avoid crash
       }
 
-      final payloadMap = json.decode(utf8.decode(
-        base64Url.decode(normalize(parts[1])),
-      )) as Map<String, dynamic>;
+      final payloadMap =
+          json.decode(utf8.decode(base64Url.decode(normalize(parts[1]))))
+              as Map<String, dynamic>;
 
       final exp = payloadMap['exp'];
       if (exp is! int) return false;
       final expiresAt = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
       // margen de 30s para evitar carreras
-      return expiresAt.isAfter(DateTime.now().add(const Duration(seconds: -30)));
+      return expiresAt.isAfter(
+        DateTime.now().add(const Duration(seconds: -30)),
+      );
     } catch (e) {
       return false;
     }
@@ -281,6 +283,52 @@ class AuthService {
         error: error,
       );
       return false;
+    }
+  }
+
+  /// Obtener información del usuario desde el token JWT
+  Future<User?> getUserFromToken() async {
+    try {
+      final token = await getToken();
+      if (token == null || token.isEmpty) return null;
+
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+
+      String normalize(String input) {
+        final mod = input.length % 4;
+        if (mod == 2) return '${input}==';
+        if (mod == 3) return '${input}=';
+        if (mod == 0) return input;
+        return input;
+      }
+
+      final payloadMap =
+          json.decode(utf8.decode(base64Url.decode(normalize(parts[1]))))
+              as Map<String, dynamic>;
+
+      final email = payloadMap['email']?.toString();
+      final userId = payloadMap['sub']?.toString();
+
+      if (email == null || userId == null) return null;
+
+      // Intentar obtener información adicional del usuario desde Google
+      final googleUser = await _googleSignIn.signInSilently();
+
+      return User(
+        id: userId,
+        email: email,
+        name: googleUser?.displayName ?? email.split('@')[0],
+        photoUrl: googleUser?.photoUrl,
+        provider: 'google',
+      );
+    } catch (e) {
+      AppLogger.error(
+        'Error obteniendo usuario desde token',
+        tag: 'AUTH_SERVICE',
+        error: e,
+      );
+      return null;
     }
   }
 }

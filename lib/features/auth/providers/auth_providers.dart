@@ -34,7 +34,39 @@ class AuthState {
 }
 
 class AuthNotifier extends StateNotifier<AuthState> {
-  AuthNotifier() : super(const AuthState());
+  final AuthService _authService = AuthService();
+
+  AuthNotifier() : super(const AuthState()) {
+    // Cargar estado del usuario al inicializar
+    loadUserState();
+  }
+
+  /// Cargar estado del usuario desde el token almacenado
+  Future<void> loadUserState() async {
+    try {
+      // Verificar si hay un token válido
+      final hasToken = await _authService.hasValidToken();
+      if (!hasToken) {
+        // No hay token válido, mantener estado vacío
+        return;
+      }
+
+      // Obtener usuario desde el token
+      final user = await _authService.getUserFromToken();
+      if (user == null) {
+        return;
+      }
+
+      // Verificar si es PRO
+      final isPro = await _authService.fetchIsPro();
+
+      // Actualizar estado
+      state = state.copyWith(user: user, isPro: isPro);
+    } catch (error) {
+      // Error al cargar estado, mantener estado actual
+      // No lanzar error para no romper la app
+    }
+  }
 
   void setUser(User user, {bool isPro = false}) {
     state = state.copyWith(user: user, isPro: isPro);

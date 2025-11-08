@@ -250,7 +250,27 @@ class ChatService {
       AppLogger.chat('📡 Stream iniciado', tag: 'CHAT_SERVICE');
 
       // Procesar stream SSE
-      final stream = response.data.stream;
+      // En Dio, cuando responseType es stream, response.data es un ResponseBody
+      // que tiene una propiedad 'stream' de tipo Stream<List<int>>
+      final responseBody = response.data;
+      Stream<List<int>> byteStream;
+
+      // Intentar acceder al stream de diferentes formas según la versión de Dio
+      if (responseBody is Stream<List<int>>) {
+        byteStream = responseBody;
+      } else {
+        // En versiones recientes de Dio, response.data es un ResponseBody
+        try {
+          // Intentar acceder a la propiedad 'stream' usando dynamic
+          final dynamic body = responseBody;
+          byteStream = body.stream as Stream<List<int>>;
+        } catch (e) {
+          throw Exception(
+            'No se pudo acceder al stream. Tipo: ${responseBody.runtimeType}, Error: $e',
+          );
+        }
+      }
+
       String buffer = '';
       String fullContent = '';
       String? conversationIdFromResponse;
@@ -258,7 +278,9 @@ class ChatService {
       int? limit;
       String? tier;
 
-      await for (final chunk in stream.transform(utf8.decoder)) {
+      // Transformar bytes a string chunk por chunk
+      await for (final bytes in byteStream) {
+        final chunk = utf8.decode(bytes, allowMalformed: true);
         buffer += chunk;
 
         // Procesar líneas completas (SSE termina con \n\n)

@@ -4,6 +4,7 @@ import '../widgets/chat_area.dart';
 import '../widgets/drawer_menu.dart';
 import '../widgets/chat_input.dart';
 import '../providers/chat_providers.dart';
+import '../../auth/providers/auth_providers.dart';
 
 /// Pantalla principal del chat
 class ChatScreen extends ConsumerStatefulWidget {
@@ -17,8 +18,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    // Cargar historial de chats al inicializar
+    // Cargar historial de chats y estado de autenticación al inicializar
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Recargar estado de autenticación (útil después de hot reload)
+      ref.read(authStateProvider.notifier).loadUserState();
+      // Cargar historial de chats
       ref.read(chatListProvider.notifier).loadChats();
     });
   }
@@ -217,8 +221,3 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 }
-
-
-
-
-
