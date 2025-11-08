@@ -110,14 +110,20 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
           state = state.copyWith(messages: updatedMessages);
         } else if (event is StreamCompleteEvent) {
-          // Stream completado
-          final finalAssistant = event.message;
-
-          // Actualizar mensaje final
+          // Stream completado - usar el contenido que ya tenemos acumulado
+          // para evitar renderizar dos veces el mismo contenido
           final updatedMessages = state.messages.map((msg) {
-            return msg.id == assistantMessageId
-                ? finalAssistant.copyWith(isStreaming: false)
-                : msg;
+            if (msg.id == assistantMessageId) {
+              // Solo actualizar el estado de streaming, el contenido ya está actualizado
+              return msg.copyWith(
+                isStreaming: false,
+                // Actualizar ID si viene uno nuevo del backend
+                id: event.message.id != assistantMessageId
+                    ? event.message.id
+                    : assistantMessageId,
+              );
+            }
+            return msg;
           }).toList();
 
           state = state.copyWith(
