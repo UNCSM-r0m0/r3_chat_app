@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../../../core/utils/logger.dart';
 import '../../../core/config/app_config.dart';
@@ -185,6 +187,174 @@ class ChatService {
         error: error,
       );
       rethrow;
+    }
+  }
+
+  /// Enviar mensaje con streaming (SSE)
+  /// Retorna un Stream que emite chunks de la respuesta mientras se genera
+  Stream<StreamChatEvent> sendMessageStream({
+    required String message,
+    required String model,
+    String? conversationId,
+  }) async* {
+    try {
+      AppLogger.chat(
+        '📤 Enviando mensaje con streaming: $message',
+        tag: 'CHAT_SERVICE',
+      );
+
+      // Normalizar modelo
+      final String normalizedModel = (model.trim().toLowerCase() == 'ollama')
+          ? 'ollama-qwen2.5-coder:7b'
+          : model;
+
+      final payload = {
+        'content': message,
+        'model': normalizedModel,
+        if (conversationId != null) 'conversationId': conversationId,
+      };
+
+      final token = await _auth.getToken();
+
+      // Configurar timeout largo para modelos locales
+      final bool isLocalModel =
+          normalizedModel.toLowerCase() == 'openai' ||
+          normalizedModel.toLowerCase().startsWith('ollama');
+      final Duration timeout = isLocalModel
+          ? const Duration(
+              minutes: 10,
+            ) // 10 minutos para streaming de modelos locales
+          : const Duration(minutes: 5); // 5 minutos para modelos cloud
+
+      AppLogger.chat(
+        '⏱️ Timeout streaming: ${timeout.inMinutes} minutos (modelo: ${isLocalModel ? "local" : "cloud"})',
+        tag: 'CHAT_SERVICE',
+      );
+
+      // Realizar petición SSE
+      final response = await _dio.post(
+        '/chat/message/stream',
+        data: payload,
+        options: Options(
+          headers: {
+            if (token != null) 'Authorization': 'Bearer $token',
+            'Accept': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+          },
+          responseType: ResponseType.stream,
+          receiveTimeout: timeout,
+          sendTimeout: const Duration(seconds: 30),
+        ),
+      );
+
+      AppLogger.chat('📡 Stream iniciado', tag: 'CHAT_SERVICE');
+
+      // Procesar stream SSE
+      final stream = response.data.stream;
+      String buffer = '';
+      String fullContent = '';
+      String? conversationIdFromResponse;
+      int? remaining;
+      int? limit;
+      String? tier;
+
+      await for (final chunk in stream.transform(utf8.decoder)) {
+        buffer += chunk;
+
+        // Procesar líneas completas (SSE termina con \n\n)
+        while (buffer.contains('\n\n')) {
+          final index = buffer.indexOf('\n\n');
+          final dataLine = buffer.substring(0, index);
+          buffer = buffer.substring(index + 2);
+
+          if (dataLine.startsWith('data: ')) {
+            final jsonStr = dataLine
+                .substring(6)
+                .trim(); // Remover "data: " y espacios
+            if (jsonStr.isEmpty) continue;
+
+            try {
+              final data = jsonDecode(jsonStr) as Map<String, dynamic>;
+
+              // Procesar diferentes tipos de eventos
+              if (data.containsKey('content')) {
+                // Chunk de contenido
+                final content = data['content'] as String? ?? '';
+                if (content.isNotEmpty) {
+                  fullContent += content;
+                  yield StreamChatEvent.chunk(content);
+                }
+              } else if (data.containsKey('finished') &&
+                  data['finished'] == true) {
+                // Stream terminado
+                conversationIdFromResponse = data['conversationId']?.toString();
+                remaining = data['remaining'] as int?;
+                limit = data['limit'] as int?;
+                tier = data['tier']?.toString();
+
+                AppLogger.chat(
+                  '✅ Stream completado: ${fullContent.length} caracteres',
+                  tag: 'CHAT_SERVICE',
+                );
+
+                // Crear mensaje final
+                final assistant = ChatMessage(
+                  id:
+                      data['messageId']?.toString() ??
+                      DateTime.now().millisecondsSinceEpoch.toString(),
+                  role: ChatRole.assistant,
+                  content: fullContent,
+                  timestamp: DateTime.now(),
+                  model: normalizedModel,
+                );
+
+                yield StreamChatEvent.complete(
+                  message: assistant,
+                  conversationId: conversationIdFromResponse,
+                  remaining: remaining,
+                  limit: limit,
+                  tier: tier,
+                );
+                return; // Terminar el stream
+              } else if (data.containsKey('error')) {
+                // Error en el stream
+                final errorMsg =
+                    data['message']?.toString() ?? 'Error desconocido';
+                AppLogger.error(
+                  '❌ Error en stream: $errorMsg',
+                  tag: 'CHAT_SERVICE',
+                );
+                yield StreamChatEvent.error(errorMsg);
+                return;
+              }
+            } catch (e) {
+              AppLogger.error('❌ Error parseando SSE: $e', tag: 'CHAT_SERVICE');
+              // Continuar procesando aunque haya un error de parsing
+            }
+          }
+        }
+      }
+    } catch (error) {
+      AppLogger.error(
+        '❌ Error en streaming',
+        tag: 'CHAT_SERVICE',
+        error: error,
+      );
+      if (error is DioException) {
+        String errorMessage = 'Error al enviar mensaje';
+        if (error.type == DioExceptionType.connectionTimeout ||
+            error.type == DioExceptionType.receiveTimeout) {
+          errorMessage =
+              'El modelo está tardando más de lo esperado. '
+              'Esto es normal con modelos locales. Intenta nuevamente.';
+        } else if (error.type == DioExceptionType.badResponse) {
+          errorMessage =
+              error.response?.data?.toString() ?? 'Error del servidor';
+        }
+        yield StreamChatEvent.error(errorMessage);
+      } else {
+        yield StreamChatEvent.error(error.toString());
+      }
     }
   }
 
@@ -464,4 +634,50 @@ class ChatResponse {
   final String? tier;
 
   ChatResponse({required this.message, this.remaining, this.limit, this.tier});
+}
+
+/// Eventos del stream de chat
+sealed class StreamChatEvent {
+  const StreamChatEvent();
+
+  /// Chunk de contenido recibido
+  const factory StreamChatEvent.chunk(String content) = StreamChunkEvent;
+
+  /// Stream completado con mensaje final
+  const factory StreamChatEvent.complete({
+    required ChatMessage message,
+    String? conversationId,
+    int? remaining,
+    int? limit,
+    String? tier,
+  }) = StreamCompleteEvent;
+
+  /// Error en el stream
+  const factory StreamChatEvent.error(String message) = StreamErrorEvent;
+}
+
+class StreamChunkEvent implements StreamChatEvent {
+  final String content;
+  const StreamChunkEvent(this.content);
+}
+
+class StreamCompleteEvent implements StreamChatEvent {
+  final ChatMessage message;
+  final String? conversationId;
+  final int? remaining;
+  final int? limit;
+  final String? tier;
+
+  const StreamCompleteEvent({
+    required this.message,
+    this.conversationId,
+    this.remaining,
+    this.limit,
+    this.tier,
+  });
+}
+
+class StreamErrorEvent implements StreamChatEvent {
+  final String message;
+  const StreamErrorEvent(this.message);
 }

@@ -28,10 +28,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
     try {
       state = state.copyWith(isLoading: true, error: null);
       final chat = await _chatService.getChat(chatId);
-      final normalizedModel =
-          (chat.model != null && chat.model == 'ollama')
-              ? 'ollama-qwen2.5-coder:7b'
-              : chat.model;
+      final normalizedModel = (chat.model != null && chat.model == 'ollama')
+          ? 'ollama-qwen2.5-coder:7b'
+          : chat.model;
       state = state.copyWith(
         messages: chat.messages,
         isLoading: false,
@@ -44,7 +43,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
     }
   }
 
-  /// Enviar mensaje
+  /// Enviar mensaje con streaming
   Future<void> sendMessage(String message, String model) async {
     if (message.trim().isEmpty) return;
 
@@ -57,43 +56,115 @@ class ChatNotifier extends StateNotifier<ChatState> {
         timestamp: DateTime.now(),
       );
 
+      // Crear mensaje de asistente vacío para streaming
+      final assistantMessageId = DateTime.now().millisecondsSinceEpoch
+          .toString();
+      final assistant = ChatMessage(
+        id: assistantMessageId,
+        role: ChatRole.assistant,
+        content: '',
+        timestamp: DateTime.now(),
+        model: model,
+        isStreaming: true,
+      );
+
       state = state.copyWith(
-        messages: [...state.messages, userMessage],
+        messages: [...state.messages, userMessage, assistant],
         isLoading: true,
+        isStreaming: true,
         error: null,
       );
 
-      // Enviar al servicio
-      final response = await _chatService.sendMessage(
+      // Actualizar conversationId si no existe
+      String? conversationId = state.currentChatId;
+      if (conversationId == null && state.messages.isEmpty) {
+        // Crear nuevo chat si es necesario
+        try {
+          final newChat = await _chatService.createNewChat();
+          conversationId = newChat.id;
+          state = state.copyWith(currentChatId: conversationId);
+        } catch (e) {
+          // Si falla crear chat, continuar sin conversationId
+        }
+      }
+
+      // Procesar stream
+      String fullContent = '';
+      await for (final event in _chatService.sendMessageStream(
         message: message,
         model: model,
-        conversationId: state.currentChatId,
-      );
+        conversationId: conversationId,
+      )) {
+        if (event is StreamChunkEvent) {
+          // Actualizar contenido del mensaje mientras llega
+          fullContent += event.content;
+          final updatedAssistant = assistant.copyWith(
+            content: fullContent,
+            isStreaming: true,
+          );
 
-      // Agregar respuesta
-      final assistant = response.message;
-      state = state.copyWith(
-        messages: [...state.messages, assistant],
-        isLoading: false,
-      );
+          // Actualizar mensaje en la lista
+          final updatedMessages = state.messages.map((msg) {
+            return msg.id == assistantMessageId ? updatedAssistant : msg;
+          }).toList();
 
-      // Actualizar uso y plan si vienen en la respuesta
-      if (response.limit != null && response.remaining != null) {
-        final used = (response.limit! - response.remaining!).clamp(
-          0,
-          response.limit!,
-        );
-        _ref
-            .read(authStateProvider.notifier)
-            .updateUsage(used: used, limit: response.limit!);
-      }
-      if (response.tier != null) {
-        _ref
-            .read(authStateProvider.notifier)
-            .setIsPro(response.tier!.toUpperCase() == 'PREMIUM');
+          state = state.copyWith(messages: updatedMessages);
+        } else if (event is StreamCompleteEvent) {
+          // Stream completado
+          final finalAssistant = event.message;
+
+          // Actualizar mensaje final
+          final updatedMessages = state.messages.map((msg) {
+            return msg.id == assistantMessageId
+                ? finalAssistant.copyWith(isStreaming: false)
+                : msg;
+          }).toList();
+
+          state = state.copyWith(
+            messages: updatedMessages,
+            isLoading: false,
+            isStreaming: false,
+            currentChatId: event.conversationId ?? state.currentChatId,
+          );
+
+          // Actualizar uso y plan
+          if (event.limit != null && event.remaining != null) {
+            final used = (event.limit! - event.remaining!).clamp(
+              0,
+              event.limit!,
+            );
+            _ref
+                .read(authStateProvider.notifier)
+                .updateUsage(used: used, limit: event.limit!);
+          }
+          if (event.tier != null) {
+            _ref
+                .read(authStateProvider.notifier)
+                .setIsPro(event.tier!.toUpperCase() == 'PREMIUM');
+          }
+          break;
+        } else if (event is StreamErrorEvent) {
+          // Error en el stream
+          state = state.copyWith(
+            isLoading: false,
+            isStreaming: false,
+            error: event.message,
+          );
+          // Remover mensaje de asistente vacío
+          state = state.copyWith(
+            messages: state.messages
+                .where((msg) => msg.id != assistantMessageId)
+                .toList(),
+          );
+          break;
+        }
       }
     } catch (error) {
-      state = state.copyWith(isLoading: false, error: error.toString());
+      state = state.copyWith(
+        isLoading: false,
+        isStreaming: false,
+        error: error.toString(),
+      );
     }
   }
 
