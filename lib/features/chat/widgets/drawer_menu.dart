@@ -63,6 +63,8 @@ class _DrawerMenuState extends ConsumerState<DrawerMenu> {
                 height: 40,
                 child: ElevatedButton.icon(
                   onPressed: () async {
+                    // Limpiar el chat actual antes de crear uno nuevo
+                    ref.read(chatStateProvider.notifier).clearChat();
                     await ref.read(chatListProvider.notifier).createNewChat();
                     if (mounted) Navigator.pop(context);
                   },
@@ -142,7 +144,9 @@ class _DrawerMenuState extends ConsumerState<DrawerMenu> {
                       ),
                     ),
                     onTap: () async {
-                      await ref.read(chatStateProvider.notifier).loadChat(chat.id);
+                      await ref
+                          .read(chatStateProvider.notifier)
+                          .loadChat(chat.id);
                       if (mounted) Navigator.pop(context);
                     },
                     trailing: IconButton(
@@ -178,11 +182,17 @@ class _DrawerMenuState extends ConsumerState<DrawerMenu> {
                       );
                     },
                     icon: const Icon(Icons.settings, size: 18),
-                    label: const Text('Account', overflow: TextOverflow.ellipsis),
+                    label: const Text(
+                      'Account',
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.white,
                       side: const BorderSide(color: Color(0xFF374151)),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 12,
+                      ),
                       minimumSize: const Size(0, 40),
                     ),
                   );
@@ -192,9 +202,7 @@ class _DrawerMenuState extends ConsumerState<DrawerMenu> {
                       await _authService.signOut();
                       if (!mounted) return;
                       Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(
-                          builder: (_) => const LoginScreen(),
-                        ),
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
                         (route) => false,
                       );
                     },
@@ -203,7 +211,10 @@ class _DrawerMenuState extends ConsumerState<DrawerMenu> {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.white,
                       side: const BorderSide(color: Color(0xFF374151)),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 12,
+                      ),
                       minimumSize: const Size(0, 40),
                     ),
                   );

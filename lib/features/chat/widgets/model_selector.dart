@@ -17,9 +17,14 @@ class ModelSelector extends ConsumerWidget {
     final chatState = ref.watch(chatStateProvider);
     final authState = ref.watch(authStateProvider);
     final isPro = authState.isPro;
-    final selectedModel =
-        chatState.selectedModel ?? (isPro ? 'deepseek' : 'ollama');
     final modelsAsync = ref.watch(availableModelsProvider);
+
+    // Obtener modelo por defecto dinámicamente
+    final defaultModelId = ref
+        .read(availableModelsStateProvider.notifier)
+        .getDefaultModelId(isPro);
+    final selectedModel =
+        chatState.selectedModel ?? defaultModelId ?? 'ollama-qwen2.5-coder:7b';
 
     // Debug: Log del estado de autenticación
     print('🔍 ModelSelector - isPro: $isPro, user: ${authState.user?.email}');

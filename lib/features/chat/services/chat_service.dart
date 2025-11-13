@@ -606,13 +606,14 @@ class ChatService {
   List<AIModel> _getFallbackModels() {
     return [
       const AIModel(
-        id: 'ollama',
-        name: 'Ollama Local',
-        provider: 'Local',
+        id: 'ollama-qwen2.5-coder:7b',
+        name: 'Qwen2.5 Coder 7B',
+        provider: 'Ollama Local',
         available: true,
         isPremium: false,
-        features: ['text-generation', 'local-processing'],
-        description: 'Modelo local ejecutándose en tu servidor',
+        features: ['text-generation', 'code-generation', 'programming'],
+        description:
+            'Modelo especializado en programación y generación de código',
         defaultModel: 'qwen2.5-coder:7b',
       ),
       const AIModel(
@@ -627,23 +628,14 @@ class ChatService {
       ),
       const AIModel(
         id: 'openai',
-        name: 'GPT-4o Mini',
-        provider: 'OpenAI',
+        name: 'GPT OSS 20B (LLM Studio)',
+        provider: 'LLM Studio Local',
         available: true,
         isPremium: true,
         features: ['text-generation', 'streaming', 'chat-completions'],
-        description: 'Modelo de OpenAI optimizado para chat y conversaciones',
-        defaultModel: 'gpt-4o-mini',
-      ),
-      const AIModel(
-        id: 'deepseek',
-        name: 'DeepSeek Chat',
-        provider: 'DeepSeek',
-        available: true,
-        isPremium: true,
-        features: ['text-generation', 'cost-effective', 'high-performance'],
-        description: 'Modelo de DeepSeek con excelente relación precio-calidad',
-        defaultModel: 'deepseek-chat',
+        description:
+            'Modelo local GPT OSS 20B ejecutándose en LLM Studio con sistema de colas',
+        defaultModel: 'openai/gpt-oss-20b',
       ),
     ];
   }

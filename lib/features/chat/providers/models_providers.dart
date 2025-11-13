@@ -72,4 +72,29 @@ class AvailableModelsNotifier extends StateNotifier<AsyncValue<List<AIModel>>> {
       error: (_, __) => [],
     );
   }
+
+  /// Obtener el modelo por defecto dinámicamente basado en los modelos disponibles
+  String? getDefaultModelId(bool isPro) {
+    return state.when(
+      data: (models) {
+        // Filtrar modelos disponibles según el tier del usuario
+        final availableModels = models
+            .where((model) => model.available && (!model.isPremium || isPro))
+            .toList();
+
+        if (availableModels.isEmpty) return null;
+
+        // Priorizar modelos no premium, luego premium
+        final freeModels = availableModels.where((m) => !m.isPremium).toList();
+        if (freeModels.isNotEmpty) {
+          return freeModels.first.id;
+        }
+
+        // Si no hay modelos gratuitos y el usuario es Pro, usar el primero disponible
+        return availableModels.first.id;
+      },
+      loading: () => null,
+      error: (_, __) => null,
+    );
+  }
 }

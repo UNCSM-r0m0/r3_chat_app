@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/chat_providers.dart';
+import '../providers/models_providers.dart';
 import '../../auth/providers/auth_providers.dart';
 import 'model_selector.dart';
 
@@ -176,8 +177,10 @@ class _ChatInputState extends ConsumerState<ChatInput> {
   Widget _buildModelButton() {
     final chatState = ref.watch(chatStateProvider);
     final isPro = ref.watch(authStateProvider).isPro;
-    final selectedModel = chatState.selectedModel ??
-        (isPro ? 'deepseek' : 'ollama-qwen2.5-coder:7b');
+    final modelsNotifier = ref.read(availableModelsStateProvider.notifier);
+    final defaultModelId = modelsNotifier.getDefaultModelId(isPro);
+    final selectedModel =
+        chatState.selectedModel ?? defaultModelId ?? 'ollama-qwen2.5-coder:7b';
 
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final isKeyboardVisible = bottomInset > 0;
@@ -328,9 +331,7 @@ class _ChatInputState extends ConsumerState<ChatInput> {
       case 'gemini':
         return 'Gemini 2.0';
       case 'openai':
-        return 'GPT-4o Mini';
-      case 'deepseek':
-        return 'DeepSeek Chat';
+        return 'GPT OSS 20B';
       default:
         // Para modelos desconocidos, truncar inteligentemente
         if (modelId.startsWith('ollama-')) {
@@ -347,8 +348,10 @@ class _ChatInputState extends ConsumerState<ChatInput> {
 
     final chatState = ref.read(chatStateProvider);
     final isPro = ref.read(authStateProvider).isPro;
-    final model = chatState.selectedModel ??
-        (isPro ? 'deepseek' : 'ollama-qwen2.5-coder:7b');
+    final modelsNotifier = ref.read(availableModelsStateProvider.notifier);
+    final defaultModelId = modelsNotifier.getDefaultModelId(isPro);
+    final model =
+        chatState.selectedModel ?? defaultModelId ?? 'ollama-qwen2.5-coder:7b';
 
     ref.read(chatStateProvider.notifier).sendMessage(text, model);
     _controller.clear();
