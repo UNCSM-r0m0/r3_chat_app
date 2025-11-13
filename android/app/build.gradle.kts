@@ -51,8 +51,15 @@ android {
         getByName("release") {
             // Usa la clave de producción
             signingConfig = signingConfigs.getByName("release")
-            isMinifyEnabled = false
-            isShrinkResources = false
+            // Habilita la optimización del código (R8)
+            isMinifyEnabled = true
+            // Habilita la reducción de recursos
+            isShrinkResources = true
+            // Archivos ProGuard
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
         getByName("debug") {
             signingConfig = signingConfigs.getByName("debug")
